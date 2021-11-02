@@ -33,7 +33,7 @@ x_pixel =		x_pos ; word ; x-coordinate for objects using screen positioning
 y_pixel =		y_pos ; word ; y-coordinate for objects using screen positioning
 collision_flags =	$28 ; byte ; TT SSSSSS ; TT = collision type, SSSSSS = size
 collision_property =	$29 ; byte ; usage varies, bosses use it as a hit counter
-shield_reaction =	$2B ; byte ; bit 3 = bounces off shield, bit 4 = negated by fire shield, bit 5 = negated by lightning shield, bit 6 = negated by bubble shield 
+shield_reaction =	$2B ; byte ; bit 3 = bounces off shield, bit 4 = negated by fire shield, bit 5 = negated by lightning shield, bit 6 = negated by bubble shield
 subtype =		$2C ; byte
 ros_bit =		$3B ; byte ; the bit to be cleared when an object is destroyed if the ROS flag is set
 ros_addr =		$3C ; word ; the RAM address whose bit to clear when an object is destroyed if the ROS flag is set
@@ -112,14 +112,14 @@ object_size =		$4A ; the size of an object's status table entry
 next_object =		object_size
 ; ---------------------------------------------------------------------------
 ; unknown or inconsistently used offsets that are not applicable to sonic/tails:
-objoff_12 =		2+x_pos 
+objoff_12 =		2+x_pos
 objoff_16 =		2+y_pos
 objoff_1C =		$1C
 objoff_1D =		$1D
 objoff_27 =		$27
 objoff_2E =		$2E
 objoff_2F =		$2F
-objoff_30 =		$30 
+objoff_30 =		$30
  enum   objoff_31=$31,objoff_32=$32,objoff_33=$33,objoff_34=$34,objoff_35=$35,objoff_36=$36,objoff_37=$37
  enum 	objoff_38=$38,objoff_39=$39,objoff_3A=$3A,objoff_3B=$3B,objoff_3C=$3C,objoff_3D=$3D,objoff_3E=$3E
  enum 	objoff_3F=$3F,objoff_40=$40,objoff_41=$41,objoff_42=$42,objoff_43=$43,objoff_44=$44,objoff_45=$45
@@ -207,7 +207,7 @@ SRAM_access_flag =		$A130F1
 Security_addr =			$A14000
 ; ---------------------------------------------------------------------------
 
-; I/O Area 
+; I/O Area
 HW_Version =			$A10001
 HW_Port_1_Data =		$A10003
 HW_Port_2_Data =		$A10005
@@ -233,443 +233,773 @@ PSG_input =			$C00011
 ; ---------------------------------------------------------------------------
 
 ; RAM addresses
-RAM_start =			ramaddr( $FFFF0000 )
-Chunk_table =			ramaddr( $FFFF0000 ) ; $8000 bytes ; chunk (128x128) definitions, $80 bytes per definition
 
 Sprite_table_buffer_2 =		ramaddr(   $FF7880 ) ; $280 bytes ; alternate sprite table for player 1 in competition mode
 Sprite_table_buffer_P2 =	ramaddr(   $FF7B00 ) ; $280 bytes ; sprite table for player 2 in competition mode
 Sprite_table_buffer_P2_2 =	ramaddr(   $FF7D80 ) ; $280 bytes ; alternate sprite table for player 2 in competition mode
 
-Level_layout_header =		ramaddr( $FFFF8000 ) ; 8 bytes ; first word = chunks per FG row, second word = chunks per BG row, third word = FG rows, fourth word = BG rows
-Level_layout_main =		ramaddr( $FFFF8008 ) ; $40 word-sized line pointers followed by actual layout data
-Block_table =			ramaddr( $FFFF9000 ) ; $1A00 bytes ; block (16x16) definitions, 8 bytes per definition
-SStage_collision_response_list := ramaddr( $FFFFA400 ) ; $100 bytes ; sprite collision list during a special stage
-Nem_code_table =		ramaddr( $FFFFAA00 ) ; $200 bytes ; code table is built up here and then used during decompression
-Sprite_table_input =		ramaddr( $FFFFAC00 ) ; $400 bytes ; 8 priority levels, $80 bytes per level
+	phase $FFFF0000
+RAM_start =			*
+Chunk_table			ds.b $8000		; chunk (128x128) definitions, $80 bytes per definition
 
-Object_RAM =			ramaddr( $FFFFB000 ) ; $1FCC bytes ; $4A bytes per object, 110 objects
-Player_1 =			ramaddr( $FFFFB000 ) ; main character in 1 player mode, player 1 in Competition mode
-Player_2 =			ramaddr( $FFFFB04A ) ; Tails in a Sonic and Tails game, player 2 in Competition mode
-Reserved_object_3 =		ramaddr( $FFFFB094 ) ; during a level, an object whose sole purpose is to clear the collision response list is stored here
-Dynamic_object_RAM =		ramaddr( $FFFFB0DE ) ; $1A04 bytes ; 90 objects
-Dynamic_object_RAM_end =	ramaddr( $FFFFCAE2 )
-Level_object_RAM =		Dynamic_object_RAM_end ; $4EA bytes ; various fixed in-level objects
-Breathing_bubbles =		ramaddr( $FFFFCB2C ) ; for the main character
-Breathing_bubbles_P2 =		ramaddr( $FFFFCB76 ) ; for Tails in a Sonic and Tails game
-Super_stars =			ramaddr( $FFFFCBC0 ) ; for Super Sonic and Super Knuckles
-Tails_tails_2P =		ramaddr( $FFFFCBC0 ) ; Tails' tails in Competition mode
-Tails_tails =			ramaddr( $FFFFCC0A ) ; Tails' tails
-Dust =				ramaddr( $FFFFCC54 )
-Dust_P2 =			ramaddr( $FFFFCC9E )
-Shield =			ramaddr( $FFFFCCE8 )
-Shield_P2 =			ramaddr( $FFFFCD32 ) ; left over from Sonic 2 I'm guessing
-Invincibility_stars =		ramaddr( $FFFFCD7C )
-Invincibility_stars_P2 =	ramaddr( $FFFFCEA4 )
+Level_layout_header		ds.b 8			; first word = chunks per FG row, second word = chunks per BG row, third word = FG rows, fourth word = BG rows
+Level_layout_main		ds.b $FF8		; $40 word-sized line pointers followed by actual layout data
+Object_respawn_table_2 :=	Level_layout_header+$400; $200 bytes ; respawn table used by glowing spheres bonus stage, because... Reasons?
+Ring_status_table_2 :=		Level_layout_header+$600; $400 bytes ; ring status table used by glowing spheres bonus stage, because... Reasons?
+Block_table			ds.b $1800		; block (16x16) definitions, 8 bytes per definition, space for $300 blocks
+SStage_collision_response_list := Block_table+$1400	; $100 bytes ; sprite collision list during a special stage
+SStage_unkA500 :=		Block_table+$1500	; unknown special stage array
+SStage_unkA600 :=		Block_table+$1600	; unknown special stage array
+HScroll_table			ds.b $200		; array of background scroll positions for the level. WARNING: some references are before this label
+_unkA880 :=			HScroll_table+$80	; used in SSZ screen/background events
+_unkA8E0 :=			HScroll_table+$E0	; used in SSZ screen/background events
+Nem_code_table			ds.b $200		; code table is built up here and then used during decompression
+Sprite_table_input		ds.b $400		; 8 priority levels, $80 bytes per level
 
-Kos_decomp_buffer =		ramaddr( $FFFFD000 ) ; $1000 bytes ; each module in a KosM archive is decompressed here and then DMAed to VRAM
-H_scroll_buffer =		ramaddr( $FFFFE000 ) ; $380 bytes ; horizontal scroll table is built up here and then DMAed to VRAM
-Collision_response_list =	ramaddr( $FFFFE380 ) ; $80 bytes ; only objects in this list are processed by the collision response routines
-Stat_table =			ramaddr( $FFFFE400 ) ; $100 bytes ; used by Tails' AI in a Sonic and Tails game
-Pos_table_P2 =			ramaddr( $FFFFE400 ) ; $100 bytes ; used by Player 2 in competition mode
-Special_stage_anim_frame =	ramaddr( $FFFFE420 ) ; word ; special stage globe's current animation frame, $10 and higher is turning
-Special_stage_X_pos =		ramaddr( $FFFFE422 ) ; word
-Special_stage_Y_pos =		ramaddr( $FFFFE424 ) ; word
-Special_stage_angle =		ramaddr( $FFFFE426 ) ; byte ; $00 = north, $40 = west, $80 = south, $C0 = east
-Special_stage_velocity =	ramaddr( $FFFFE428 ) ; word ; player's movement speed, negative when going backwards
-Special_stage_turning =		ramaddr( $FFFFE42A ) ; byte ; direction of next turn, 4 = left, -4 = right
-Special_stage_bumper_lock =	ramaddr( $FFFFE42B ) ; byte ; if set, the player can't start advancing by pressing up
-Special_stage_prev_anim_frame =	ramaddr( $FFFFE42C ) ; byte
-Special_stage_palette_frame =	ramaddr( $FFFFE42F ) ; byte ; same as Special_stage_anim_frame, but set to 0 while turning
-Special_stage_turn_lock =	ramaddr( $FFFFE430 ) ; byte ; if set, the player can't turn
-Special_stage_advancing =	ramaddr( $FFFFE431 ) ; byte ; set when the player player presses up
-Special_stage_jumping =		ramaddr( $FFFFE432 ) ; byte ; $80 = normal jump, $81 = spring
-Special_stage_fade_timer =	ramaddr( $FFFFE433 ) ; byte ; counts up when leaving the special stage
-Special_stage_prev_X_pos =	ramaddr( $FFFFE434 ) ; word
-Special_stage_prev_Y_pos =	ramaddr( $FFFFE436 ) ; word
-Special_stage_spheres_left =	ramaddr( $FFFFE438 ) ; word
-Special_stage_ring_count =	ramaddr( $FFFFE43A ) ; word
-Special_stage_sphere_HUD_flag =	ramaddr( $FFFFE43C ) ; byte
-Special_stage_extra_life_flags = ramaddr( $FFFFE43D ) ; byte ; when bit 7 is set, the ring HUD is updated
-Special_stage_rate_timer =	ramaddr( $FFFFE43E ) ; word ; when this reaches 0, the special stage speeds up
-Special_stage_jumping_P2 =	ramaddr( $FFFFE440 ) ; byte ; $80 = normal jump, $81 = spring
-Special_stage_rings_left =	ramaddr( $FFFFE442 ) ; word
-Special_stage_rate =		ramaddr( $FFFFE444 ) ; word ; player's maximum speed in either direction
-Special_stage_palette_addr =	ramaddr( $FFFFE446 ) ; long ; ROM address of the stage's color palette
-Special_stage_clear_timer =	ramaddr( $FFFFE44A ) ; word ; counts up after getting the last sphere, when it reaches $100 the emerald appears
-Special_stage_clear_routine =	ramaddr( $FFFFE44C ) ; byte ; if set, the player can't jump
-Special_stage_emerald_timer =	ramaddr( $FFFFE44D ) ; byte ; counts down when the emerald appears, when it reaches 0 the emerald sound plays
-Special_stage_interact =	ramaddr( $FFFFE44E ) ; word ; address of the last bumper touched, or the emerald at the end of the stage
-Special_stage_started =		ramaddr( $FFFFE450 ) ; byte ; set when the player begins moving at the start of the stage
+Object_RAM =			*			; $1FCC bytes ; $4A bytes per object, 110 objects
+Player_1			ds.b object_size	; main character in 1 player mode, player 1 in Competition mode
+Player_2			ds.b object_size	; Tails in a Sonic and Tails game, player 2 in Competition mode
+Reserved_object_3		ds.b object_size	; during a level, an object whose sole purpose is to clear the collision response list is stored here
+Dynamic_object_RAM		ds.b object_size*90	; $1A04 bytes ; 90 objects
+Dynamic_object_RAM_end =	*
+Level_object_RAM =		Dynamic_object_RAM_end	; $4EA bytes ; various fixed in-level objects
+		ds.b object_size			; unknown
+Breathing_bubbles		ds.b object_size	; for the main character
+Breathing_bubbles_P2		ds.b object_size	; for Tails in a Sonic and Tails game
+Super_stars =			*			; for Super Sonic and Super Knuckles
+Tails_tails_2P			ds.b object_size	; Tails' tails in Competition mode
+Tails_tails			ds.b object_size	; Tails' tails
+Dust				ds.b object_size
+Dust_P2				ds.b object_size
+Shield				ds.b object_size
+Shield_P2			ds.b object_size	; left over from Sonic 2 I'm guessing
+Invincibility_stars		ds.b object_size*4
+Invincibility_stars_P2		ds.b object_size*3
+Wave_Splash			ds.b object_size	; Obj_HCZWaveSplash is loaded here
+Object_RAM_end =		*
+			ds.b $14			; unused
+Conveyor_belt_load_array	ds.b $E			; each subtype of hcz conveyor belt uses a different byte to check if it's already loaded. Since they're so wide, the object loader may try loading them multiple times
+			ds.b $12			; unused
 
-Pos_table =			ramaddr( $FFFFE500 ) ; $100 bytes
-Competition_saved_data =	ramaddr( $FFFFE600 ) ; $54 bytes ; saved data from Competition Mode
-Save_pointer :=			ramaddr( $FFFFE660 ) ; long ; pointer to the active save slot in 1 player mode
+Kos_decomp_buffer		ds.b $1000		; each module in a KosM archive is decompressed here and then DMAed to VRAM
+H_scroll_buffer			ds.b $380		; horizontal scroll table is built up here and then DMAed to VRAM
+Collision_response_list		ds.b $80		; only objects in this list are processed by the collision response routines
+Stat_table =			*			; used by Tails' AI in a Sonic and Tails game
+Pos_table_P2			ds.b $100		; used by Player 2 in competition mode
+Pos_table 			ds.b $100		;
+Competition_saved_data		ds.b $54		; saved data from Competition Mode
+			ds.b $C				; unused
+Save_pointer :=			*			; pointer to the active save slot in 1 player mode
+				ds.l 1			; Sonic 3 has a different address... So uh... Yes
+			ds.w 1				; unused
+Emerald_flicker_flag		ds.w 1			; controls the emerald flicker in save screen and special stage results.
+			ds.b $44			; unused
+Saved_data :=			*			; saved data from 1 player mode
+				ds.b $54		; Sonic 3 has a different address... So uh... Yes
+Ring_status_table		ds.b $400		; 1 word per ring
+Object_respawn_table		ds.b $300		; 1 byte per object, every object in the level gets an entry
 
-Saved_data :=			ramaddr( $FFFFE6AC ) ; $54 bytes ; saved data from 1 player mode
-Ring_status_table =		ramaddr( $FFFFE700 ) ; $400 bytes ; 1 word per ring
-Object_respawn_table =		ramaddr( $FFFFEB00 ) ; $300 bytes ; 1 byte per object, every object in the level gets an entry
-Camera_RAM =			ramaddr( $FFFFEE00 ) ; various camera and scroll-related variables are stored here
-H_scroll_amount =		ramaddr( $FFFFEE00 ) ; word ; number of pixels camera scrolled horizontally in the last frame * $100
-V_scroll_amount =		ramaddr( $FFFFEE02 ) ; word ; number of pixels camera scrolled vertically in the last frame * $100
-H_scroll_amount_P2 =		ramaddr( $FFFFEE04 ) ; word
-V_scroll_amount_P2 =		ramaddr( $FFFFEE06 ) ; word
-Scroll_lock =			ramaddr( $FFFFEE0A ) ; byte ; if this is set scrolling routines aren't called
-Scroll_lock_P2 =		ramaddr( $FFFFEE0B ) ; byte
-Camera_target_min_X_pos =	ramaddr( $FFFFEE0C ) ; word
-Camera_target_max_X_pos =	ramaddr( $FFFFEE0E ) ; word
-Camera_target_min_Y_pos =	ramaddr( $FFFFEE10 ) ; word
-Camera_target_max_Y_pos =	ramaddr( $FFFFEE12 ) ; word
-Camera_min_X_pos =		ramaddr( $FFFFEE14 ) ; word
-Camera_max_X_pos =		ramaddr( $FFFFEE16 ) ; word
-Camera_min_Y_pos =		ramaddr( $FFFFEE18 ) ; word
-Camera_max_Y_pos =		ramaddr( $FFFFEE1A ) ; word ; this is the only one which ever differs from its target value
-Camera_min_X_pos_P2 =		ramaddr( $FFFFEE1C ) ; word
-Camera_max_X_pos_P2 =		ramaddr( $FFFFEE1E ) ; word
-Camera_min_Y_pos_P2 =		ramaddr( $FFFFEE20 ) ; word
-Camera_max_Y_pos_P2 =		ramaddr( $FFFFEE22 ) ; word
-H_scroll_frame_offset =		ramaddr( $FFFFEE24 ) ; word ; if this is non-zero with value x, horizontal scrolling will be based on the player's position x / $100 + 1 frames ago
-Pos_table_index =		ramaddr( $FFFFEE26 ) ; word ; goes up in increments of 4
-H_scroll_frame_offset_P2 =	ramaddr( $FFFFEE28 ) ; word
-Pos_table_index_P2 =		ramaddr( $FFFFEE2A ) ; word
-Distance_from_top =		ramaddr( $FFFFEE2C ) ; word ; the vertical scroll manager scrolls the screen until the player's distance from the top of the screen is equal to this (or between this and this + $40 when in the air). $60 by default
-Distance_from_top_P2 =		ramaddr( $FFFFEE2E ) ; word
-Deform_lock =			ramaddr( $FFFFEE30 ) ; byte
-Camera_max_Y_pos_changing =	ramaddr( $FFFFEE32 ) ; byte ; set when the maximum camera Y pos is undergoing a change
-Dynamic_resize_routine =	ramaddr( $FFFFEE33 ) ; byte
-Fast_V_scroll_flag =		ramaddr( $FFFFEE39 ) ; byte ; if this is set vertical scroll when the player is on the ground and has a speed of less than $800 is capped at 24 pixels per frame instead of 6
-V_scroll_value_P2_copy =	ramaddr( $FFFFEE3A ) ; long ; upper word for foreground, lower word for background
+Camera_RAM =			*			; various camera and scroll-related variables are stored here
+H_scroll_amount			ds.w 1			; number of pixels camera scrolled horizontally in the last frame * $100
+V_scroll_amount			ds.w 1			; number of pixels camera scrolled vertically in the last frame * $100
+H_scroll_amount_P2		ds.w 1
+V_scroll_amount_P2		ds.w 1
+_unkEE08			ds.b 1			; this is actually unused
+			ds.b 1				; unused
+Scroll_lock			ds.b 1			; if this is set scrolling routines aren't called
+Scroll_lock_P2			ds.b 1
+Camera_target_min_X_pos		ds.w 1
+Camera_target_max_X_pos		ds.w 1
+Camera_target_min_Y_pos		ds.w 1
+Camera_target_max_Y_pos		ds.w 1
+Camera_min_X_pos		ds.w 1
+Camera_max_X_pos		ds.w 1
+Camera_min_Y_pos		ds.w 1
+Camera_max_Y_pos		ds.w 1			; this is the only one which ever differs from its target value
+Camera_min_X_pos_P2		ds.w 1
+Camera_max_X_pos_P2		ds.w 1
+Camera_min_Y_pos_P2		ds.w 1
+Camera_max_Y_pos_P2		ds.w 1
+H_scroll_frame_offset		ds.w 1			; if this is non-zero with value x, horizontal scrolling will be based on the player's position x / $100 + 1 frames ago
+Pos_table_index			ds.w 1			; goes up in increments of 4
+H_scroll_frame_offset_P2	ds.w 1
+Pos_table_index_P2		ds.w 1
+Distance_from_top		ds.w 1			; the vertical scroll manager scrolls the screen until the player's distance from the top of the screen is equal to this (or between this and this + $40 when in the air). $60 by default
+Distance_from_top_P2		ds.w 1
+Deform_lock			ds.b 1
+			ds.b 1				; unused
+Camera_max_Y_pos_changing	ds.b 1			; set when the maximum camera Y pos is undergoing a change
+Dynamic_resize_routine		ds.b 1
+			ds.b 5				; unused
+Fast_V_scroll_flag		ds.b 1			; if this is set vertical scroll when the player is on the ground and has a speed of less than $800 is capped at 24 pixels per frame instead of 6
+V_scroll_value_P2_copy		ds.l 1			; upper word for foreground, lower word for background
+Camera_X_diff			ds.w 1			; difference between Camera_X_pos_copy and Camera_X_pos_BG_copy, used for background collision in SSZ and other levels
+Camera_Y_diff			ds.w 1			; difference between Camera_Y_pos_copy and Camera_Y_pos_BG_copy, used for background collision in SSZ and other levels
+Ring_start_addr_ROM		ds.l 1			; address in the ring layout of the first ring whose X position is >= camera X position - 8
+Ring_end_addr_ROM		ds.l 1			; address in the ring layout of the first ring whose X position is >= camera X position + 328
+Ring_start_addr_RAM		ds.w 1			; address in the ring status table of the first ring whose X position is >= camera X position - 8
+			ds.w 1				; unused
+Apparent_zone_and_act =		*
+Apparent_zone			ds.b 1			; always equal to actual zone
+Apparent_act			ds.b 1			; for example, after AIZ gets burnt, this indicates act 1 even though it's actually act 2
+Palette_fade_timer		ds.w 1			; the palette gets faded in until this timer expires
+Competition_time_record		ds.l 1		; player 1's recorded time for the current run, to be displayed in menus and the result screen 
+Competition_time_record_minute =			Competition_time_record+1
+Competition_time_record_second =			Competition_time_record+2
+Competition_time_record_frame =			Competition_time_record+3
+Competition_time_record_P2	ds.l 1		; player 2's recorded time for the current run, to be displayed in menus and the result screen 
+Competition_time_record_minute_P2 =		Competition_time_record_P2+1
+Competition_time_record_second_P2 =		Competition_time_record_P2+2
+Competition_time_record_frame_P2 =		Competition_time_record_P2+3
+Competition_time_attack_new_top_record			ds.b 1		; signifies new time records in time attack mode. set: no new records, clear: 1st place, $1: 2nd place, $2: 3rd place record.
+			ds.b 1				; unused
+Competition_lap_count			ds.b 1			; number of laps that player 1 has completed
+Competition_lap_count_2P			ds.b 1		; number of laps that player 2 has completed
+Act3_flag			ds.b 1			; set when entering LRZ 3 or DEZ 3 directly from previous act. Prevents title card from loading
+			ds.b 1				; unused
+Camera_X_pos_P2			ds.l 1
+Camera_Y_pos_P2			ds.l 1
+Camera_X_pos_P2_copy		ds.w 1
+			ds.w 1				; unused
+Camera_Y_pos_P2_copy		ds.w 1
+			ds.w 1				; unused
+_unkEE70			ds.w 1			; it is unclear how this is used
+			ds.w 1				; unused
+_unkEE74			ds.w 1			; it is unclear how this is used
+			ds.w 1				; unused
+Camera_X_pos			ds.l 1
+Camera_Y_pos			ds.l 1
+Camera_X_pos_copy		ds.l 1
+Camera_Y_pos_copy		ds.l 1
+Camera_X_pos_rounded		ds.w 1			; rounded down to the nearest block boundary ($10th pixel)
+Camera_Y_pos_rounded		ds.w 1			; rounded down to the nearest block boundary ($10th pixel)
+Camera_X_pos_BG_copy		ds.w 1
+_unkEE8E			ds.w 1			; various uses in screen/background events and competition mode
 
-Ring_start_addr_ROM =		ramaddr( $FFFFEE42 ) ; long ; address in the ring layout of the first ring whose X position is >= camera X position - 8
-Ring_end_addr_ROM =		ramaddr( $FFFFEE46 ) ; long ; address in the ring layout of the first ring whose X position is >= camera X position + 328
-Ring_start_addr_RAM =		ramaddr( $FFFFEE4A ) ; word ; address in the ring status table of the first ring whose X position is >= camera X position - 8
-Apparent_zone_and_act =		ramaddr( $FFFFEE4E ) ; word
-Apparent_zone =			ramaddr( $FFFFEE4E ) ; byte ; always equal to actual zone
-Apparent_act =			ramaddr( $FFFFEE4F ) ; byte ; for example, after AIZ gets burnt, this indicates act 1 even though it's actually act 2
-Palette_fade_timer =		ramaddr( $FFFFEE50 ) ; word ; the palette gets faded in until this timer expires
+Camera_Y_pos_BG_copy		ds.l 1
+Camera_X_pos_BG_rounded		ds.w 1			; rounded down to the nearest block boundary ($10th pixel)
+Camera_Y_pos_BG_rounded		ds.w 1			; rounded down to the nearest block boundary ($10th pixel)
+_unkEE98			ds.l 1			; various uses in screen/background events and competition mode
+_unkEE9C			ds.l 1			; various uses in screen/background events and competition mode
+_unkEEA0			ds.w 1			; various uses in screen/background events and competition mode
+_unkEEA2			ds.w 1			; various uses in screen/background events and competition mode
+Plane_double_update_flag	ds.w 1			; set when two block are to be updated instead of one (i.e. the camera's scrolled by more than $10 pixels)
+Special_V_int_routine		ds.w 1
+Screen_X_wrap_value		ds.w 1			; set to $FFFF
+Screen_Y_wrap_value		ds.w 1			; either $7FF or $FFF
+Camera_Y_pos_mask		ds.w 1			; either $7F0 or $FF0
+Layout_row_index_mask		ds.w 1			; either $3C or $7C
 
-Act_3_flag =			ramaddr( $FFFFEE5E ) ; byte ; set when entering LRZ 3 or DEZ 3 directly from previous act. Prevents title card from loading
-Camera_X_pos_P2 =		ramaddr( $FFFFEE60 ) ; word
-Camera_Y_pos_P2 =		ramaddr( $FFFFEE64 ) ; word
-Camera_X_pos_P2_copy =		ramaddr( $FFFFEE68 ) ; word
-Camera_Y_pos_P2_copy =		ramaddr( $FFFFEE6C ) ; word
-Camera_X_pos =			ramaddr( $FFFFEE78 ) ; word
-Camera_Y_pos =			ramaddr( $FFFFEE7C ) ; word
-Camera_X_pos_copy =		ramaddr( $FFFFEE80 ) ; word
-Camera_Y_pos_copy =		ramaddr( $FFFFEE84 ) ; word
-Camera_X_pos_rounded =		ramaddr( $FFFFEE88 ) ; word ; rounded down to the nearest block boundary ($10th pixel)
-Camera_Y_pos_rounded =		ramaddr( $FFFFEE8A ) ; word ; rounded down to the nearest block boundary ($10th pixel)
-Camera_X_pos_BG_copy =		ramaddr( $FFFFEE8C ) ; word
-Camera_Y_pos_BG_copy =		ramaddr( $FFFFEE90 ) ; word
-Camera_X_pos_BG_rounded =	ramaddr( $FFFFEE94 ) ; word ; rounded down to the nearest block boundary ($10th pixel)
-Camera_Y_pos_BG_rounded =	ramaddr( $FFFFEE96 ) ; word ; rounded down to the nearest block boundary ($10th pixel)
-Plane_double_update_flag =	ramaddr( $FFFFEEA4 ) ; word ; set when two block are to be updated instead of one (i.e. the camera's scrolled by more than $10 pixels)
-Special_V_int_routine =		ramaddr( $FFFFEEA6 ) ; word
-Screen_X_wrap_value =		ramaddr( $FFFFEEA8 ) ; word ; set to $FFFF
-Screen_Y_wrap_value =		ramaddr( $FFFFEEAA ) ; word ; either $7FF or $FFF
-Camera_Y_pos_mask =		ramaddr( $FFFFEEAC ) ; word ; either $7F0 or $FF0
-Layout_row_index_mask =		ramaddr( $FFFFEEAE ) ; word ; either $3C or $7C
+_unkEEB0			ds.w 1			;
+Special_events_routine		ds.w 1			; routine counter for various special events. Used for example with LBZ2 Death Egg sequence
+Events_fg_0			ds.w 1			; various flags used by screen events
+Events_fg_1			ds.w 1			; various flags used by screen events
+Events_fg_2			ds.w 1			; various flags used by screen events
+_unkEEBA			ds.w 1			; only used in Sonic 3
+Level_repeat_offset		ds.w 1			; the number of pixels the screen was moved this frame, used to offset level objects horizontally. Used only for level repeat sections, such as AIZ airship.
+Events_fg_3			ds.w 1			; various flags used by screen events
+Events_routine_fg		ds.w 1			; screen events routine counter
+Events_routine_bg		ds.w 1			; background events routine counter
+Events_fg_4			ds.w 1			; various flags used by screen events
+Events_fg_5			ds.w 1			; various flags used by screen events
+Draw_delayed_position		ds.w 1			; position to redraw screen from. Screen is reloaded 1 row at a time to avoid game lag
+Draw_delayed_rowcount		ds.w 1			; number of rows for screen redrawing. Screen is reloaded 1 row at a time to avoid game lag
+Screen_shake_flag		ds.w 1			; flag for enabling screen shake. Negative values cause screen to shake infinitely, positive values make the screen shake for a short amount of time
+Screen_shake_offset		ds.w 1			; vertical offset when screen_shake_flag is enabled. This is added to camera position later
+Screen_shake_last_offset	ds.w 1			; value of Screen_shake_offset for the previous frame
 
-Not_ghost_flag =		ramaddr( $FFFFEE49 ) ; byte ; set if Player 2 in competition mode isn't a ghost of player 1
-Demo_data_addr =		ramaddr( $FFFFEE52 ) ; long ; keeps getting incremented as the demo progresses
-Use_normal_sprite_table =	ramaddr( $FFFFEF3C ) ; word ; if this is set Sprite_table_buffer and Sprite_table_buffer_P2 will be DMAed instead of Sprite_table_buffer_2 and Sprite_table_buffer_P2_2
-SRAM_mask_interrupts_flag =	ramaddr( $FFFFEF56 ) ; word ; if this is set SRAM routines will mask all interrupts (by setting the SR to $2700)
+Events_bg			ds.b $18		; $18 bytes ; various flags used by background events
+SStage_results_object_addr =	Events_bg+$E		; word ; RAM address of the special stage results object
+FBZ_cloud_addr =		*			; $14 bytes ; addresses for cloud objects in FBZ2
+Vscroll_buffer =		*			; $50 bytes ; vertical scroll buffer used in various levels
+_unkEEEA			ds.w 1			; various unknown uses for EEEA
+			ds.w 1				; used in some instances (see above)
+_unkEEEE			ds.w 1			; used exclusively in SSZ background events code
+			ds.w 1				; used in some instances (see above)
+_unkEEF2			ds.w 1			; used exclusively in SSZ background events code
+_unkEEF4			ds.w 1			; used exclusively in SSZ background events code
+_unkEEF6			ds.l 1			; used exclusively in SSZ background events code
+_unkEEFA			ds.w 1			; used exclusively in SSZ background events code
+			ds.b $3E			; used in some instances (see above)
 
-Object_index_addr =		ramaddr( $FFFFEF5A ) ; long ; points to either the object index for S3 levels or that for S&K levels
-Camera_Y_pos_coarse_back =	ramaddr( $FFFFEF64 ) ; word ; Camera_Y_pos_coarse - $80
-Ending_running_flag =		ramaddr( $FFFFEF72 ) ; word ; the only thing this does is prevent the game from pausing
-Plane_buffer_2_addr =		ramaddr( $FFFFEF74 ) ; long ; the address of the second plane buffer to process, if applicable
-Demo_number =			ramaddr( $FFFFEF7A ) ; word ; the currently running demo
-Ring_consumption_table =	ramaddr( $FFFFEF80 ) ; $80 bytes ; stores the addresses of all rings currently being consumed
-Ring_consumption_count =	ramaddr( $FFFFEF80 ) ; word ; the number of rings being consumed currently
-Ring_consumption_list =		ramaddr( $FFFFEF82 ) ; $7E bytes ; the remaining part of the ring consumption table
-SStage_results_object_addr =	ramaddr( $FFFFEEE0 ) ; word ; RAM address of the special stage results object
+Spritemask_flag			ds.w 1			; when set, indicates that special sprites are used for sprite masking
+Use_normal_sprite_table		ds.w 1			; if this is set Sprite_table_buffer and Sprite_table_buffer_P2 will be DMAed instead of Sprite_table_buffer_2 and Sprite_table_buffer_P2_2
+Switch_sprite_table		ds.w 1			; if set, switches the state of Use_normal_sprite_table
+Event_LBZ2_DeathEgg =		*			; if set, Launch Base 2 Death Egg is currently rising
+_unkEF40_1			ds.l 1			; used as a part of calculating decimal scores
+_unkEF44_1 =			*			; used as a jump pointer in vint 1E, unknown why this is used
+_unkEF44_2			ds.l 1			; used as a part of calculating decimal scores
+Competition_menu_selection	ds.b 1			; 0 = Grandprix, 1 = Matchrace, 2 = Timeattack. 3 = Exit
+Not_ghost_flag			ds.b 1			; set if Player 2 in competition mode isn't a ghost of player 1
+Competition_menu_zone		ds.b 1			; competition mode zone id. This is different from the zone order in game
+Dataselect_entry		ds.b 1			; the selected save entry in data select menu. This includes no save and delete options, too
+Dataselect_nosave_player	ds.w 1			; Player mode for NO SAVE option in data select menu
+Competition_menu_monitors	ds.b 1			; 0 = Enabled, FF = Disabled
+			ds.b 1				; unused
+Demo_start_button		ds.b 1			; keeps track of whether controller 1 has pressed the start button. May be used by the demo data itself
+			ds.b 1				; unused
+Demo_data_addr			ds.l 1			; keeps getting incremented as the demo progresses
+SRAM_mask_interrupts_flag	ds.w 1			; if this is set SRAM routines will mask all interrupts (by setting the SR to $2700)
+			ds.w 1				; unused
+Object_index_addr		ds.l 1			; points to either the object index for S3 levels or that for S&K levels
+Act3_ring_count			ds.w 1			; stores ring count during act 3 transition
+Act3_timer			ds.l 1			; stores timer during act 3 transition
+Camera_Y_pos_coarse_back	ds.w 1			; Camera_Y_pos_coarse - $80
+Glide_screen_shake		ds.w 1			; alternate screen shaking flag only used when hyper knuckles hits a wall after gliding
+_unkEF68			ds.w 1			; stores a tile used in special stage results screen, unknown purpose
+Special_stage_zone_and_act	ds.w 1			; stored zone and act during special stage results screen?
+HPZ_special_stage_completed	ds.w 1			; set if special stage was completed. This determines which cutscene to play when entering HPZS
+Current_special_stage_2		ds.b 1			; seems to be just a copy of Current_special_stage
+			ds.b 1				; unused
+HPZ_current_special_stage	ds.b 1			; seems to be just a copy of Current_special_stage used specifically for HPZS
+			ds.b 1				; unused
+Ending_running_flag		ds.w 1			; the only thing this does is prevent the game from pausing
+Plane_buffer_2_addr		ds.l 1			; the address of the second plane buffer to process, if applicable
+Demo_hold_counter		ds.b 1			; the number of frames to hold the current buttons. This only applies to S&K demos
+Demo_hold_buttons		ds.b 1			; the buttons to hold. This only applies to S&K demos
+Demo_number			ds.w 1			; the currently running demo
+			ds.l 1				; unused
 
-Target_water_palette =		ramaddr( $FFFFF000 ) ; $80 bytes ; used by palette fading routines
-Water_palette =			ramaddr( $FFFFF080 ) ; $80 bytes ; this is what actually gets displayed
-Water_palette_line_2 =		ramaddr( $FFFFF0A0 ) ; $20 bytes
-Water_palette_line_3 =		ramaddr( $FFFFF0C0 ) ; $20 bytes
-Water_palette_line_4 =		ramaddr( $FFFFF0E0 ) ; $20 bytes
+Ring_consumption_table =	*			; $80 bytes ; stores the addresses of all rings currently being consumed
+Ring_consumption_count		ds.w 1			; the number of rings being consumed currently
+Ring_consumption_list		ds.w $3F		; the remaining part of the ring consumption table
 
-Plane_buffer =			ramaddr( $FFFFF100 ) ; $480 bytes ; used by level drawing routines
-VRAM_buffer =			ramaddr( $FFFFF580 ) ; $80 bytes ; used to temporarily hold data while it is being transferred from one VRAM location to another
+SStage_layout_buffer =		*			; $600 bytes ; yes, this area is used to for special stage layouts!
+Target_water_palette		ds.b $80		; used by palette fading routines
+Water_palette			ds.b $80		; this is what actually gets displayed
+Water_palette_line_2 =		Water_palette+$20	; $20 bytes
+Water_palette_line_3 =		Water_palette+$40	; $20 bytes
+Water_palette_line_4 =		Water_palette+$60	; $20 bytes
+Plane_buffer			ds.b $480		; used by level drawing routines
+VRAM_buffer			ds.b $80		; used to temporarily hold data while it is being transferred from one VRAM location to another
 
-Game_mode =			ramaddr( $FFFFF600 ) ; byte
-Ctrl_1_logical =		ramaddr( $FFFFF602 ) ; word ; both held and pressed
-Ctrl_1_held_logical =		ramaddr( $FFFFF602 ) ; byte 
-Ctrl_1_pressed_logical =	ramaddr( $FFFFF603 ) ; byte
-Ctrl_1 =			ramaddr( $FFFFF604 ) ; word ; both held and pressed
-Ctrl_1_held =			ramaddr( $FFFFF604 ) ; byte ; all held buttons
-Ctrl_1_pressed =		ramaddr( $FFFFF605 ) ; byte ; buttons being pressed newly this frame
-Ctrl_2 =			ramaddr( $FFFFF606 ) ; word ; both held and pressed
-Ctrl_2_held =			ramaddr( $FFFFF606 ) ; byte
-Ctrl_2_pressed =		ramaddr( $FFFFF607 ) ; byte
+Game_mode			ds.b 1
+			ds.b 1				; unused
+Ctrl_1_logical =		*			; both held and pressed
+Ctrl_1_held_logical		ds.b 1
+Ctrl_1_pressed_logical		ds.b 1
+Ctrl_1 =			*			; both held and pressed
+Ctrl_1_held			ds.b 1			; all held buttons
+Ctrl_1_pressed			ds.b 1			; buttons being pressed newly this frame
+Ctrl_2 =			*			; both held and pressed
+Ctrl_2_held			ds.b 1
+Ctrl_2_pressed			ds.b 1
+_tempF608		ds.b 6				; this is used in Sonic 3 Alone, but unused in Sonic & Knuckles and Sonic 3 Complete
 
-VDP_reg_1_command =		ramaddr( $FFFFF60E ) ; word ; AND the lower byte by $BF and write to VDP control port to disable display, OR by $40 to enable
-Demo_timer =			ramaddr( $FFFFF614 ) ; word ; the time left for a demo to start/run
-V_scroll_value =		ramaddr( $FFFFF616 ) ; long ; both foreground and background
-V_scroll_value_FG =		ramaddr( $FFFFF616 ) ; word
-V_scroll_value_BG =		ramaddr( $FFFFF618 ) ; word
-V_scroll_value_P2 =		ramaddr( $FFFFF61E ) ; long
-V_scroll_value_FG_P2 =		ramaddr( $FFFFF61E ) ; word
-V_scroll_value_BG_P2 =		ramaddr( $FFFFF620 ) ; word
-Teleport_active_timer =		ramaddr( $FFFFF622 ) ; byte ; left over from Sonic 2
-Teleport_active_flag =		ramaddr( $FFFFF623 ) ; byte ; left over from Sonic 2
-H_int_counter_command =		ramaddr( $FFFFF624 ) ; word ; contains a command to write to VDP register $0A (line interrupt counter)
-H_int_counter =			ramaddr( $FFFFF625 ) ; byte ; just the counter part of the command
-Palette_fade_info =		ramaddr( $FFFFF626 ) ; word ; both index and count
-Palette_fade_index =		ramaddr( $FFFFF626 ) ; byte ; colour to start fading from
-Palette_fade_count =		ramaddr( $FFFFF627 ) ; byte ; the number of colours to fade
-Lag_frame_count =		ramaddr( $FFFFF628 ) ; word ; more specifically, the number of times V-int routine 0 has run. Reset at the end of a normal frame
-V_int_routine =			ramaddr( $FFFFF62A ) ; byte
-Sprites_drawn =			ramaddr( $FFFFF62C ) ; byte ; used to ensure the sprite limit isn't exceeded
-Water_palette_data_addr =	ramaddr( $FFFFF62E ) ; long ; points to the water palette data for the current level
-RNG_seed =			ramaddr( $FFFFF636 ) ; long ; used by the random number generator
-Game_paused =			ramaddr( $FFFFF63A ) ; word
-DMA_trigger_word =		ramaddr( $FFFFF640 ) ; word ; transferred from RAM to avoid crashing the Mega Drive
-H_int_flag =			ramaddr( $FFFFF644 ) ; word ; unless this is set H-int will return immediately
+VDP_reg_1_command		ds.w 1			; AND the lower byte by $BF and write to VDP control port to disable display, OR by $40 to enable
+			ds.l 1				; unused
+Demo_timer			ds.w 1			; the time left for a demo to start/run
+V_scroll_value =		*			; both foreground and background
+V_scroll_value_FG		ds.w 1
+V_scroll_value_BG		ds.w 1
+_unkF61A			ds.l 1			; unused
+V_scroll_value_P2 =		*
+V_scroll_value_FG_P2		ds.w 1
+V_scroll_value_BG_P2		ds.w 1
+Teleport_active_timer		ds.b 1			; left over from Sonic 2
+Teleport_active_flag		ds.b 1			; left over from Sonic 2
+H_int_counter_command		ds.w 1			; contains a command to write to VDP register $0A (line interrupt counter)
+H_int_counter =			H_int_counter_command+1	; just the counter part of the command
+Palette_fade_info =		*			; both index and count
+Palette_fade_index		ds.b 1			; colour to start fading from
+Palette_fade_count		ds.b 1			; the number of colours to fade
+Lag_frame_count			ds.w 1			; more specifically, the number of times V-int routine 0 has run. Reset at the end of a normal frame
+V_int_routine			ds.b 1
+			ds.b 1				; unused
+Sprites_drawn			ds.b 1			; used to ensure the sprite limit isn't exceeded
+			ds.b 1				; unused
+Water_palette_data_addr		ds.l 1			; points to the water palette data for the current level
+Palette_cycle_counter0		ds.w 1			; various counters and variables for palette cycles
+Palette_cycle_counter1		ds.w 1			; various counters and variables for palette cycles
+RNG_seed			ds.l 1			; used by the random number generator
+Game_paused			ds.w 1
+			ds.l 1				; unused
+DMA_trigger_word		ds.w 1			; transferred from RAM to avoid crashing the Mega Drive
+			ds.w 1				; unused
+H_int_flag			ds.w 1			; unless this is set H-int will return immediately
 
-Water_level =			ramaddr( $FFFFF646 ) ; word ; keeps fluctuating
-Mean_water_level =		ramaddr( $FFFFF648 ) ; word ; the steady central value of the water level
-Target_water_level =		ramaddr( $FFFFF64A ) ; word
-Water_speed =			ramaddr( $FFFFF64C ) ; byte ; this is added to or subtracted from Mean_water_level every frame till it reaches Target_water_level
-Water_entered_counter =		ramaddr( $FFFFF64D ) ; byte ; incremented when entering and exiting water, read by the the floating AIZ spike log, cleared on level initialisation and dynamic events of certain levels
-Water_full_screen_flag =	ramaddr( $FFFFF64E ) ; byte ; set if water covers the entire screen (i.e. the underwater pallete should be DMAed during V-int rather than the normal palette)
-Do_Updates_in_H_int =		ramaddr( $FFFFF64F ) ; byte ; if this is set Do_Updates will be called from H-int instead of V-int
-Palette_frame =			ramaddr( $FFFFF65C ) ; word
-Palette_timer = 		ramaddr( $FFFFF65E ) ; byte
-Super_palette_status =		ramaddr( $FFFFF65F ) ; byte ; appears to be a flag for the palette's current status: '0' for 'off', '1' for 'fading', -1 for 'fading done'
-Hyper_Sonic_flash_timer =	ramaddr( $FFFFF666 ) ; byte ; used for Hyper Sonic's double jump move
-Super_Tails_flag =		ramaddr( $FFFFF667 ) ; byte
-Palette_frame_Tails =		ramaddr( $FFFFF668 ) ; byte ; Tails would use Palette_frame and Palette_timer, but they're reserved for his Super Flickies
-Palette_timer_Tails =		ramaddr( $FFFFF669 ) ; byte
-Ctrl_2_logical =		ramaddr( $FFFFF66A ) ; word ; both held and pressed
-Ctrl_2_held_logical =		ramaddr( $FFFFF66A ) ; byte
-Ctrl_2_pressed_logical =	ramaddr( $FFFFF66B ) ; byte
-Super_frame_count =		ramaddr( $FFFFF670 ) ; word
-Scroll_force_positions =	ramaddr( $FFFFF676 ) ; byte ; if this is set scrolling will be based on the two variables below rather than the player's actual position
-Scroll_forced_X_pos =		ramaddr( $FFFFF678 ) ; word
-Scroll_forced_Y_pos =		ramaddr( $FFFFF67C ) ; word
+Water_level			ds.w 1			; keeps fluctuating
+Mean_water_level		ds.w 1			; the steady central value of the water level
+Target_water_level		ds.w 1
+Water_speed			ds.b 1			; this is added to or subtracted from Mean_water_level every frame till it reaches Target_water_level
+Water_entered_counter		ds.b 1			; incremented when entering and exiting water, read by the the floating AIZ spike log, cleared on level initialisation and dynamic events of certain levels
+Water_full_screen_flag		ds.b 1			; set if water covers the entire screen (i.e. the underwater palette should be DMAed during V-int rather than the normal palette)
+Do_Updates_in_H_int		ds.b 1			; if this is set Do_Updates will be called from H-int instead of V-int
+Palette_cycle_counters		ds.b $C			; various counters and variables for palette cycles
+Palette_frame			ds.w 1
+Palette_timer			ds.b 1
+Super_palette_status		ds.b 1			 ; appears to be a flag for the palette's current status: '0' for 'off', '1' for 'fading', -1 for 'fading done'
+_unkF660			ds.w 1
+_unkF662			ds.w 1			 ; unused
+Background_collision_flag	ds.b 1			 ; if set, background collision is enabled
+Disable_death_plane		ds.b 1			 ; if set, going below the screen wont kill the player
+Hyper_Sonic_flash_timer		ds.b 1			 ; used for Hyper Sonic's double jump move
+Super_Tails_flag		ds.b 1
+Palette_frame_Tails		ds.b 1			 ; Tails would use Palette_frame and Palette_timer, but they're reserved for his Super Flickies
+Palette_timer_Tails		ds.b 1
+Ctrl_2_logical =		*			 ; both held and pressed
+Ctrl_2_held_logical		ds.b 1
+Ctrl_2_pressed_logical		ds.b 1
+_unkF66C			ds.b 1
+			ds.b 3				; unused
+Super_frame_count		ds.w 1
+			ds.l 1				; unused
+Scroll_force_positions		ds.b 1			; if this is set scrolling will be based on the two variables below rather than the player's actual position
+			ds.b 1				; unused
+Scroll_forced_X_pos		ds.w 1
+			ds.w 1				; unused
+Scroll_forced_Y_pos		ds.w 1			; note: must be exactly 4 bytes after Scroll_forced_X_pos
+			ds.w 1				; unused
 
-Nem_decomp_queue =		ramaddr( $FFFFF680 ) ; $60 bytes ; 6 bytes per entry, first longword is source location and next word is VRAM destination
-Nem_decomp_source =		ramaddr( $FFFFF680 ) ; long ; the compressed data location for the first entry in the queue
-Nem_decomp_destination =	ramaddr( $FFFFF684 ) ; word ; destination in VRAM for the first entry in the queue
-Nem_decomp_vars =		ramaddr( $FFFFF6E0 ) ; $20 bytes ; various variables used by the Nemesis decompression queue processor
-Nem_write_routine =		ramaddr( $FFFFF6E0 ) ; long ; points to either Nem_PCD_WriteRowToVDP or Nem_PCD_WriteRowToVDP_XOR
-Nem_repeat_count =		ramaddr( $FFFFF6E4 ) ; long ; stored repeat count for the current palette index
-Nem_palette_index =		ramaddr( $FFFFF6E8 ) ; long ; the current palette index
-Nem_previous_row =		ramaddr( $FFFFF6EC ) ; long ; used in XOR mode
-Nem_data_word =			ramaddr( $FFFFF6F0 ) ; long ; contains the current compressed word being processed
-Nem_shift_value =		ramaddr( $FFFFF6F4 ) ; long ; the number of bits the data word needs to be shifted by
-Nem_patterns_left =		ramaddr( $FFFFF6F8 ) ; word ; the number of patterns remaining to be decompressed
-Nem_frame_patterns_left =	ramaddr( $FFFFF6FA ) ; word ; the number of patterns remaining to be decompressed in the current frame
+Nem_decomp_queue		ds.b 6*$10		; 6 bytes per entry, first longword is source location and next word is VRAM destination
+Nem_decomp_source =		Nem_decomp_queue	; long ; the compressed data location for the first entry in the queue
+Nem_decomp_destination =	Nem_decomp_queue+4	; word ; destination in VRAM for the first entry in the queue
+Nem_decomp_vars =		*			; $20 bytes ; various variables used by the Nemesis decompression queue processor
+Nem_write_routine		ds.l 1			; points to either Nem_PCD_WriteRowToVDP or Nem_PCD_WriteRowToVDP_XOR
+Nem_repeat_count		ds.l 1			; stored repeat count for the current palette index
+Nem_palette_index		ds.l 1			; the current palette index
+Nem_previous_row		ds.l 1			; used in XOR mode
+Nem_data_word			ds.l 1			; contains the current compressed word being processed
+Nem_shift_value			ds.l 1			; the number of bits the data word needs to be shifted by
+Nem_patterns_left		ds.w 1			; the number of patterns remaining to be decompressed
+Nem_frame_patterns_left		ds.w 1			; the number of patterns remaining to be decompressed in the current frame
+			ds.l 1				; unused?
 
-Tails_CPU_interact =		ramaddr( $FFFFF700 ) ; word ; RAM address of the last object Tails stood on while controlled by AI
-Tails_CPU_idle_timer =		ramaddr( $FFFFF702 ) ; word ; counts down while controller 2 is idle, when it reaches 0 the AI takes over
-Tails_CPU_flight_timer =	ramaddr( $FFFFF704 ) ; word ; counts up while Tails is respawning, when it reaches 300 he drops into the level
-Tails_CPU_routine =		ramaddr( $FFFFF708 ) ; word ; Tails' current AI routine in a Sonic and Tails game
-Rings_manager_routine =		ramaddr( $FFFFF710 ) ; byte
-Level_started_flag =		ramaddr( $FFFFF711 ) ; byte
-Water_flag =			ramaddr( $FFFFF730 ) ; byte
-Flying_carrying_Sonic_flag =	ramaddr( $FFFFF73E ) ; byte ; set when Tails carries Sonic in a Sonic and Tails game
-Flying_picking_Sonic_timer =	ramaddr( $FFFFF73F ) ; byte ; until this is 0 Tails can't pick Sonic up
-Tails_CPU_star_post_flag =	ramaddr( $FFFFF746 ) ; byte ; copy of Last_star_post_hit, sets Tails' starting behavior in a Sonic and Tails game
-Ctrl_1_title =			ramaddr( $FFFFF748 ) ; word ; copy of Ctrl_1, used on the title screen
-Ctrl_1_held_title =		ramaddr( $FFFFF748 ) ; byte
-Ctrl_1_pressed_title =		ramaddr( $FFFFF749 ) ; byte
-Max_speed =			ramaddr( $FFFFF760 ) ; word
-Acceleration =			ramaddr( $FFFFF762 ) ; word
-Deceleration =			ramaddr( $FFFFF764 ) ; word
-Player_prev_frame =		ramaddr( $FFFFF766 ) ; byte ; used by DPLC routines to detect whether a DMA transfer is required
-Primary_Angle =			ramaddr( $FFFFF768 ) ; byte
-Secondary_Angle =		ramaddr( $FFFFF76A ) ; byte
-Object_load_routine =		ramaddr( $FFFFF76C ) ; byte ; routine counter for the object loading manager
-Camera_X_pos_coarse =		ramaddr( $FFFFF76E ) ; word ; rounded down to the nearest chunk boundary (128th pixel)
-Camera_Y_pos_coarse =		ramaddr( $FFFFF770 ) ; word ; rounded down to the nearest chunk boundary (128th pixel)
-Object_load_addr_front =	ramaddr( $FFFFF772 ) ; long ; the address inside the object placement data of the first object whose X pos is >= Camera_X_pos_coarse + $280
-Object_load_addr_back =		ramaddr( $FFFFF776 ) ; long ; the address inside the object placement data of the first object whose X pos is >= Camera_X_pos_coarse - $80
-Object_respawn_index_front =	ramaddr( $FFFFF77A ) ; word ; the object respawn table index for the object at Obj_load_addr_front
-Object_respawn_index_back =	ramaddr( $FFFFF77C ) ; word ; the object respawn table index for the object at Obj_load_addr_back
-Collision_addr =		ramaddr( $FFFFF796 ) ; long ; points to the primary or secondary collision data as appropriate
-Boss_flag =			ramaddr( $FFFFF7AA ) ; byte ; set if a boss fight is going on
-Primary_collision_addr =	ramaddr( $FFFFF7B4 ) ; long
-Secondary_collision_addr =	ramaddr( $FFFFF7B8 ) ; long
-Reverse_gravity_flag =		ramaddr( $FFFFF7C6 ) ; byte
+Tails_CPU_interact		ds.w 1			; RAM address of the last object Tails stood on while controlled by AI
+Tails_CPU_idle_timer		ds.w 1			; counts down while controller 2 is idle, when it reaches 0 the AI takes over
+Tails_CPU_flight_timer		ds.w 1			; counts up while Tails is respawning, when it reaches 300 he drops into the level
+			ds.w 1				; unused
+Tails_CPU_routine		ds.w 1			; Tails' current AI routine in a Sonic and Tails game
+Tails_CPU_target_X		ds.w 1			; Tails' target x-position
+Tails_CPU_target_Y		ds.w 1			; Tails' target y-position
+Tails_CPU_auto_fly_timer	ds.b 1		; counts up until AI Tails automatically flies up to maintain altitude, while grabbing Sonic in Marble Garden Act 2's boss
+Tails_CPU_auto_jump_flag	ds.b 1		; set to #1 when AI Tails needs to jump of his own accord, regardless of whether Sonic jumped or not
+Rings_manager_routine		ds.b 1
+Level_started_flag		ds.b 1
+_unkF712			ds.b $1C		; ??? ; unknown object respawn table
+AIZ1_palette_cycle_flag		ds.b 1			; selects which palette cycles are used in AIZ1
+			ds.b 1				; unused
+Water_flag			ds.b 1
+			ds.b $D				; unused
+Flying_carrying_Sonic_flag	ds.b 1			; set when Tails carries Sonic in a Sonic and Tails game
+Flying_picking_Sonic_timer	ds.b 1			; until this is 0 Tails can't pick Sonic up
+_unkF740			ds.w 1
+			ds.w 1				; unused
+_unkF744			ds.w 1
+Tails_CPU_star_post_flag	ds.b 1			; copy of Last_star_post_hit, sets Tails' starting behavior in a Sonic and Tails game
+			ds.b 1				; unused
+Ctrl_1_title =			*			; copy of Ctrl_1, used on the title screen
+Ctrl_1_held_title		ds.b 1
+Ctrl_1_pressed_title		ds.b 1
+_unkF74A			ds.b 1
+_unkF74B			ds.b 1
+_unkF74C			ds.w 1
+_unkF74E			ds.b 1
+Disable_wall_grab		ds.b 1			; if set, disables Knuckles wall grab
+			ds.b $10			; unused
+Max_speed			ds.w 1
+Acceleration			ds.w 1
+Deceleration			ds.w 1
+Player_prev_frame		ds.b 1			; used by DPLC routines to detect whether a DMA transfer is required
+			ds.b 1				; unused
+Primary_Angle			ds.b 1
+Primary_Angle_save		ds.b 1	; Used in FindFloor/FindWall
+Secondary_Angle			ds.b 1
+Secondary_Angle_save	ds.b 1	; Used in FindFloor/FindWall
 
-WindTunnel_flag =		ramaddr( $FFFFF7C8 ) ; byte
-Ctrl_1_locked =			ramaddr( $FFFFF7CA ) ; byte
-Ctrl_2_locked =			ramaddr( $FFFFF7CB ) ; byte
-Chain_bonus_counter =		ramaddr( $FFFFF7D0 ) ; word
-Time_bonus_countdown =		ramaddr( $FFFFF7D2 ) ; word ; used on the results screen
-Ring_bonus_countdown =		ramaddr( $FFFFF7D4 ) ; word ; used on the results screen
-Camera_X_pos_coarse_back =	ramaddr( $FFFFF7DA ) ; word ; Camera_X_pos_coarse - $80
-Player_prev_frame_P2 =		ramaddr( $FFFFF7DE ) ; byte ; used by DPLC routines to detect whether a DMA transfer is required
-Player_prev_frame_P2_tail =	ramaddr( $FFFFF7DF ) ; byte ; used by DPLC routines to detect whether a DMA transfer is required
-Level_trigger_array =		ramaddr( $FFFFF7E0 ) ; $10 bytes ; used by buttons, etc.
-Anim_Counters =			ramaddr( $FFFFF7F0 ) ; $10 bytes ; each word stores data on animated level art, including duration and current frame
+Object_load_routine		ds.b 1			; routine counter for the object loading manager
+			ds.b 1				; unused
+Camera_X_pos_coarse		ds.w 1			; rounded down to the nearest chunk boundary (128th pixel)
+Camera_Y_pos_coarse		ds.w 1			; rounded down to the nearest chunk boundary (128th pixel)
+Object_load_addr_front		ds.l 1			; the address inside the object placement data of the first object whose X pos is >= Camera_X_pos_coarse + $280
+Object_load_addr_back		ds.l 1			; the address inside the object placement data of the first object whose X pos is >= Camera_X_pos_coarse - $80
+Object_respawn_index_front	ds.w 1			; the object respawn table index for the object at Obj_load_addr_front
+Object_respawn_index_back	ds.w 1			; the object respawn table index for the object at Obj_load_addr_back
+			ds.b $16			; unused
+Pal_fade_delay			ds.w 1			; timer for palette fade routines
+Collision_addr			ds.l 1			; points to the primary or secondary collision data as appropriate
+			ds.b $10			; unused
+Boss_flag			ds.b 1			; set if a boss fight is going on
+			ds.b 5				; unused
+_unkF7B0			ds.b 4
 
-Sprite_table_buffer =		ramaddr( $FFFFF800 ) ; $280 bytes
-DMA_queue =			ramaddr( $FFFFFB00 ) ; $FC bytes ; stores all the VDP commands necessary to initiate a DMA transfer
-DMA_queue_slot =		ramaddr( $FFFFFBFC ) ; long ; points to the next free slot on the queue
+Primary_collision_addr		ds.l 1
+Secondary_collision_addr	ds.l 1
+			ds.l 1				; unused
+MHZ_pollen_counter		ds.b 1			; number of currently active pollen or leaves in MHZ
+_unkF7C1			ds.b 1
+_unkF7C2			ds.b 1
+_unkF7C3			ds.b 1
+_unkF7C4			ds.w 1
+Reverse_gravity_flag		ds.b 1
+_unkF7C7			ds.b 1
+WindTunnel_flag			ds.b 1
+WindTunnel_flag_P2		ds.b 1
+Ctrl_1_locked			ds.b 1
+Ctrl_2_locked			ds.b 1
+			ds.l 1				; unused
+Chain_bonus_counter		ds.w 1
+Time_bonus_countdown		ds.w 1			; used on the results screen
+Ring_bonus_countdown		ds.w 1			; used on the results screen
+			ds.l 1				; unused
+Camera_X_pos_coarse_back	ds.w 1			; Camera_X_pos_coarse - $80
+_unkF7DC			ds.w 1
+Player_prev_frame_P2		ds.b 1			; used by DPLC routines to detect whether a DMA transfer is required
+Player_prev_frame_P2_tail	ds.b 1			; used by DPLC routines to detect whether a DMA transfer is required
+Level_trigger_array		ds.b $10		; used by buttons, etc.
+Anim_Counters			ds.b $10		; each word stores data on animated level art, including duration and current frame
 
-Normal_palette =		ramaddr( $FFFFFC00 ) ; $80 bytes
-Normal_palette_line_2 =		ramaddr( $FFFFFC20 ) ; $20 bytes
-Normal_palette_line_3 =		ramaddr( $FFFFFC40 ) ; $20 bytes
-Normal_palette_line_4 =		ramaddr( $FFFFFC60 ) ; $20 bytes
-Target_palette =		ramaddr( $FFFFFC80 ) ; $80 bytes ; used by palette fading routines
-Target_palette_line_2 =		ramaddr( $FFFFFCA0 ) ; $20 bytes
-Target_palette_line_3 =		ramaddr( $FFFFFCC0 ) ; $20 bytes
-Target_palette_line_4 =		ramaddr( $FFFFFCE0 ) ; $20 bytes
+Sprite_table_buffer		ds.b $280
+_unkFA80			ds.w 1			; unused
+_unkFA82			ds.b 1
+_unkFA83			ds.b 1
+_unkFA84			ds.w 1
+_unkFA86			ds.w 1
+_unkFA88			ds.b 1
+_unkFA89			ds.b 1
+_unkFA8A			ds.w 1
+_unkFA8C			ds.w 1			; unused?
+_unkFA8E			ds.w 1
+_unkFA90			ds.w 1
+Target_camera_max_X_pos		ds.w 1			; the target camera maximum x-position
+Target_camera_min_X_pos		ds.w 1			; the target camera minimum x-position
+Target_camera_min_Y_pos		ds.w 1			; the target camera minimum y-position
+Target_camera_max_Y_pos		ds.w 1			; the target camera maximum y-position
+Slotted_object_bits		ds.w 1			; bits to determine which slots are used for slotted objects
+			ds.b 6				; unused
+_unkFAA2			ds.b 1
+_unkFAA3			ds.b 1
+_unkFAA4			ds.w 1
+Signpost_addr			ds.w 1			; address of the currently active signpost object. Hidden monitors use this for bouncing
+_unkFAA8			ds.b 1
+_unkFAA9			ds.b 1
+End_of_level_flag		ds.b 1			; set if end of level is current active, for example after beating a boss
+_unkFAAB			ds.b 1
+_unkFAAC			ds.b 1
+_unkFAAD			ds.b 1
+_unkFAAE			ds.w 1
+_unkFAB0			ds.w 1
+_unkFAB2			ds.w 1
+_unkFAB4			ds.w 1
+_unkFAB6			ds.w 1
+_unkFAB8			ds.b 1
+_unkFAB9			ds.b 1
+_unkFABA			ds.w 1
+_unkFABC			ds.b 1
+_unkFABD			ds.b 1
+_unkFABE			ds.b 1			; unused?
+Palette_rotation_disable	ds.b 1			; if set, palette rotation scripts are disabled
+_unkFAC0			ds.b 1
+_unkFAC1			ds.b 1
+_unkFAC2			ds.w 1
+_unkFAC4			ds.w 1
+			ds.w 1				; unused
+_unkFAC8			ds.w 1
+			ds.w 1				; unused
+_unkFACC			ds.b 1
+_unkFACD			ds.b 1
+Pal_fade_delay2			ds.w 1			; timer for palette fade from white routine
+			ds.b $A				; unused
+Palette_rotation_custom		ds.l 1			; custom routine for palette rotation scripts
+Palette_rotation_data		ds.w 9			; data used by palette rotation scripts. Last word must always be 0
+SSZ_MTZ_boss_X_pos			ds.w 1			; horizontal position of the Metropolis Zone boss in Sky Sanctuary
+			ds.w 1				; unused
+SSZ_MTZ_boss_Y_pos			ds.w 1			; vertical position of the Metropolis Zone boss in Sky Sanctuary
+			ds.w 1				; unused
+SSZ_MTZ_boss_X_vel			ds.w 1				; horizontal velocity of the Metropolis Zone boss in Sky Sanctuary
+SSZ_MTZ_boss_Y_vel			ds.w 1				; vertical velocity of the Metropolis Zone boss in Sky Sanctuary
+SSZ_MTZ_boss_laser_timer			ds.w 1	; counts down until a laser is fired in Sky Sanctuary's Metropolis boss fight
+			ds.w 1				; unused
 
-System_stack =			ramaddr( $FFFFFE00 ) ; $100 bytes ; this is the top of the stack, it grows downwards
-Restart_level_flag =		ramaddr( $FFFFFE02 ) ; word
-Level_frame_counter =		ramaddr( $FFFFFE04 ) ; word ; the number of frames which have elapsed since the level started
-Debug_object =			ramaddr( $FFFFFE06 ) ; byte ; the current position in the debug mode object list
-Debug_placement_mode =		ramaddr( $FFFFFE08 ) ; word ; both routine and type
-Debug_placement_routine =	ramaddr( $FFFFFE08 ) ; byte
-Debug_placement_type =		ramaddr( $FFFFFE09 ) ; byte ; 0 = normal gameplay, 1 = normal object placement, 2 = frame cycling
-V_int_run_count =		ramaddr( $FFFFFE0C ) ; long ; the number of times V-int has run
-Current_zone_and_act =		ramaddr( $FFFFFE10 ) ; word
-Current_zone =			ramaddr( $FFFFFE10 ) ; byte
-Current_act =			ramaddr( $FFFFFE11 ) ; byte
-Life_count =			ramaddr( $FFFFFE12 ) ; byte
-Current_special_stage =		ramaddr( $FFFFFE16 ) ; byte
-Continue_count =		ramaddr( $FFFFFE18 ) ; byte
-Super_Sonic_Knux_flag =		ramaddr( $FFFFFE19 ) ; byte
-Time_over_flag =		ramaddr( $FFFFFE1A ) ; byte
-Extra_life_flags =		ramaddr( $FFFFFE1B ) ; byte
-Update_HUD_life_count =		ramaddr( $FFFFFE1C ) ; byte
-Update_HUD_ring_count =		ramaddr( $FFFFFE1D ) ; byte
-Update_HUD_timer =		ramaddr( $FFFFFE1E ) ; byte
-Update_HUD_score =		ramaddr( $FFFFFE1F ) ; byte
-Ring_count =			ramaddr( $FFFFFE20 ) ; word
-Timer =				ramaddr( $FFFFFE22 ) ; long
-Timer_minute =			ramaddr( $FFFFFE23 ) ; byte
-Timer_second =			ramaddr( $FFFFFE24 ) ; byte
-Timer_frame =			ramaddr( $FFFFFE25 ) ; byte ; the second gets incremented when this reaches 60
-Score =				ramaddr( $FFFFFE26 ) ; long
-Last_star_post_hit =		ramaddr( $FFFFFE2A ) ; byte
+DMA_queue			ds.w $12*7		; stores all the VDP commands necessary to initiate a DMA transfer
+DMA_queue_slot			ds.l 1			; points to the next free slot on the queue
+
+Normal_palette			ds.b $80
+Normal_palette_line_2 =		Normal_palette+$20	; $20 bytes
+Normal_palette_line_3 =		Normal_palette+$40	; $20 bytes
+Normal_palette_line_4 =		Normal_palette+$60	; $20 bytes
+Target_palette			ds.b $80		; used by palette fading routines
+Target_palette_line_2 =		Target_palette+$20	; $20 bytes
+Target_palette_line_3 =		Target_palette+$40	; $20 bytes
+Target_palette_line_4 =		Target_palette+$60	; $20 bytes
+Stack_contents			ds.b $100		; stack contents
+System_stack =			*			; this is the top of the stack, it grows downwards
+
+			ds.w 1				; unused
+Restart_level_flag		ds.w 1
+Level_frame_counter		ds.w 1			; the number of frames which have elapsed since the level started
+Debug_object			ds.b 1			; the current position in the debug mode object list
+			ds.b 1				; unused
+Debug_placement_mode =		*			; both routine and type
+Debug_placement_routine		ds.b 1
+Debug_placement_type		ds.b 1			; 0 = normal gameplay, 1 = normal object placement, 2 = frame cycling
+Debug_camera_delay		ds.b 1
+Debug_camera_speed		ds.b 1
+V_int_run_count			ds.l 1			; the number of times V-int has run
+Current_zone_and_act =		*
+Current_zone			ds.b 1
+Current_act			ds.b 1
+Life_count			ds.b 1
+			ds.b 3				; unused
+Current_special_stage		ds.b 1
+			ds.b 1				; unused
+Continue_count			ds.b 1
+Super_Sonic_Knux_flag		ds.b 1
+Time_over_flag			ds.b 1
+Extra_life_flags		ds.b 1
+Update_HUD_life_count		ds.b 1
+Update_HUD_ring_count		ds.b 1
+Update_HUD_timer		ds.b 1
+Update_HUD_score		ds.b 1
+Ring_count			ds.w 1
+Timer				ds.l 1
+Timer_minute =			Timer+1
+Timer_second =			Timer+2
+Timer_frame =			Timer+3			; the second gets incremented when this reaches 60
+Score				ds.l 1
+Last_star_post_hit		ds.b 1
 
 ; the following variables are all saved when hitting a star post
-Saved_last_star_post_hit =	ramaddr( $FFFFFE2B ) ; byte
-Saved_zone_and_act =		ramaddr( $FFFFFE2C ) ; word
-Saved_X_pos =			ramaddr( $FFFFFE2E ) ; word
-Saved_Y_pos =			ramaddr( $FFFFFE30 ) ; word
-Saved_ring_count =		ramaddr( $FFFFFE32 ) ; word
-Saved_timer =			ramaddr( $FFFFFE34 ) ; long
-Saved_art_tile =		ramaddr( $FFFFFE38 ) ; word
-Saved_solid_bits =		ramaddr( $FFFFFE3A ) ; word ; copy of Player 1's top_solid_bit and lrb_solid_bit
-Saved_camera_X_pos =		ramaddr( $FFFFFE3C ) ; word
-Saved_camera_Y_pos =		ramaddr( $FFFFFE3E ) ; word
-Saved_mean_water_level =	ramaddr( $FFFFFE40 ) ; word
-Saved_water_full_screen_flag =	ramaddr( $FFFFFE42 ) ; byte
-Saved_extra_life_flags =	ramaddr( $FFFFFE43 ) ; byte
-Saved_camera_max_Y_pos =	ramaddr( $FFFFFE44 ) ; word
-Saved_dynamic_resize_routine =	ramaddr( $FFFFFE46 ) ; word
-Saved_status_secondary =	ramaddr( $FFFFFE47 ) ; word
-
-Special_bonus_entry_flag =	ramaddr( $FFFFFE48 ) ; byte ; 1 for entering a Special Stage, 2 for entering a Bonus Stage
+Saved_last_star_post_hit	ds.b 1
+Saved_zone_and_act		ds.w 1
+Saved_X_pos			ds.w 1
+Saved_Y_pos			ds.w 1
+Saved_ring_count		ds.w 1
+Saved_timer			ds.l 1
+Saved_art_tile			ds.w 1
+Saved_solid_bits		ds.w 1			; copy of Player 1's top_solid_bit and lrb_solid_bit
+Saved_camera_X_pos		ds.w 1
+Saved_camera_Y_pos		ds.w 1
+Saved_mean_water_level		ds.w 1
+Saved_water_full_screen_flag	ds.b 1
+Saved_extra_life_flags		ds.b 1
+Saved_camera_max_Y_pos		ds.w 1
+Saved_dynamic_resize_routine	ds.b 1
+Saved_status_secondary		ds.b 1
+Special_bonus_entry_flag	ds.b 1			; 1 for entering a Special Stage, 2 for entering a Bonus Stage
 
 ; the following variables are all saved when entering a special stage
-Saved2_last_star_post_hit =	ramaddr( $FFFFFE49 ) ; byte
-Saved2_zone_and_act =		ramaddr( $FFFFFE4A ) ; word
-Saved2_X_pos =			ramaddr( $FFFFFE4C ) ; word
-Saved2_Y_pos =			ramaddr( $FFFFFE4E ) ; word
-Saved2_ring_count =		ramaddr( $FFFFFE50 ) ; word
-Saved2_timer =			ramaddr( $FFFFFE52 ) ; long
-Saved2_art_tile =		ramaddr( $FFFFFE56 ) ; word
-Saved2_solid_bits =		ramaddr( $FFFFFE58 ) ; word
-Saved2_camera_X_pos =		ramaddr( $FFFFFE5A ) ; word
-Saved2_camera_Y_pos =		ramaddr( $FFFFFE5C ) ; word
-Saved2_mean_water_level =	ramaddr( $FFFFFE5E ) ; word
-Saved2_water_full_screen_flag =	ramaddr( $FFFFFE60 ) ; byte
-Saved2_extra_life_flags =	ramaddr( $FFFFFE61 ) ; byte
-Saved2_camera_max_Y_pos =	ramaddr( $FFFFFE62 ) ; word
-Saved2_dynamic_resize_routine =	ramaddr( $FFFFFE64 ) ; byte
+Saved2_last_star_post_hit	ds.b 1
+Saved2_zone_and_act		ds.w 1
+Saved2_X_pos			ds.w 1
+Saved2_Y_pos			ds.w 1
+Saved2_ring_count		ds.w 1
+Saved2_timer			ds.l 1
+Saved2_art_tile			ds.w 1
+Saved2_solid_bits		ds.w 1
+Saved2_camera_X_pos		ds.w 1
+Saved2_camera_Y_pos		ds.w 1
+Saved2_mean_water_level		ds.w 1
+Saved2_water_full_screen_flag	ds.b 1
+Saved2_extra_life_flags		ds.b 1
+Saved2_camera_max_Y_pos		ds.w 1
+Saved2_dynamic_resize_routine	ds.b 1
 
-Rings_frame_timer =		ramaddr( $FFFFFEB2 ) ; byte
-Rings_frame =			ramaddr( $FFFFFEB3 ) ; byte
-Ring_spill_anim_counter =	ramaddr( $FFFFFEB6 ) ; byte
-Ring_spill_anim_frame =		ramaddr( $FFFFFEB7 ) ; byte
-Ring_spill_anim_accum =		ramaddr( $FFFFFEB8 ) ; byte
-Max_speed_P2 =			ramaddr( $FFFFFEC0 ) ; word
-Acceleration_P2 =		ramaddr( $FFFFFEC2 ) ; word
-Deceleration_P2 =		ramaddr( $FFFFFEC4 ) ; word
-Life_count_P2 =			ramaddr( $FFFFFEC6 ) ; byte ; left over from Sonic 2
-Total_ring_count =		ramaddr( $FFFFFEC8 ) ; word ; left over from Sonic 2
-Total_ring_count_P2 =		ramaddr( $FFFFFECA ) ; word ; left over from Sonic 2
-Ring_count_P2 =			ramaddr( $FFFFFED0 ) ; word ; left over from Sonic 2
-Timer_P2 =			ramaddr( $FFFFFED2 ) ; long ; left over from Sonic 2
-Timer_minute_P2 =		ramaddr( $FFFFFED3 ) ; byte ; left over from Sonic 2
-Score_P2 =			ramaddr( $FFFFFED6 ) ; long ; left over from Sonic 2
-Perfect_rings_left =		ramaddr( $FFFFFF04 ) ; word ; left over from Sonic 2
-Player_mode =			ramaddr( $FFFFFF08 ) ; word ; 0 = Sonic and Tails, 1 = Sonic alone, 2 = Tails alone, 3 = Knuckles alone
-Player_option =			ramaddr( $FFFFFF0A ) ; word ; option selected on level select, data select screen or Sonic & Knuckles title screen
+LRZ_rocks_routine		ds.b 1			; routine counter for lrz special rocks
+LRZ_rocks_addr_front		ds.l 1			; the address inside the lrz rocks data of the first rock whose X pos is >= Camera_X_pos_coarse + $280
+LRZ_rocks_addr_back		ds.l 1			; the address inside the lrz rocks data of the first rock whose X pos is >= Camera_X_pos_coarse - $80
+Oscillating_table		ds.b $42		; various oscillating variables
+Oscillating_table_end =		*			; end of oscillating data array
+Slot_machine_goal_frame_timer			ds.b 1
+Slot_machine_goal_frame			ds.b 1
+Rings_frame_timer		ds.b 1
+Rings_frame			ds.b 1
+Slot_machine_peppermint_frame_timer			ds.b 1
+Slot_machine_peppermint_frame			ds.b 1
+Ring_spill_anim_counter		ds.b 1
+Ring_spill_anim_frame		ds.b 1
+Ring_spill_anim_accum		ds.b 1
+			ds.b 1				; unused
+AIZ_vine_angle			ds.w 1			; controls the angle of AIZ giant vines
+			ds.w 1				; unused
+_unkFEBE			ds.b 1			; unused
+Extra_life_flags_P2		ds.b 1
+Max_speed_P2			ds.w 1
+Acceleration_P2			ds.w 1
+Deceleration_P2			ds.w 1
+Life_count_P2			ds.b 1			; left over from Sonic 2
+_unkFEC7			ds.b 1			; used in competition mode
+Total_ring_count		ds.w 1			; left over from Sonic 2
+Total_ring_count_P2		ds.w 1			; left over from Sonic 2
+Monitors_broken			ds.w 1			; left over from Sonic 2. Apparently Sonic 3 developers liked copypasting, since gaining a life from rings also increments this counter
+Monitors_broken_P2		ds.w 1			; left over from Sonic 2
+Ring_count_P2			ds.w 1			; left over from Sonic 2
+Timer_P2			ds.l 1			; used in competition mode
+Timer_minute_P2 =		Timer_P2+1
+Timer_second_P2 =		Timer_P2+2
+Timer_frame_P2 =		Timer_P2+3		; the second gets incremented when this reaches 60
+Score_P2			ds.l 1			; left over from Sonic 2
+Competition_total_laps			ds.b 1		; total number of laps in competition mode (typically 5)
+			ds.b 1				; unused
+Competition_current_lap			ds.b 1		; current lap number for player 1 in competition mode
+Competition_current_lap_2P		ds.b 1		; current lap number for player 2 in competition mode
+_unkFEDE			ds.b 1			; unused
+			ds.b $23			; unused
+Results_screen_2P		ds.w 1			; left over from Sonic 2
+Perfect_rings_left		ds.w 1			; left over from Sonic 2
+_unkFF06			ds.w 1			; unknown
+Player_mode			ds.w 1			; 0 = Sonic and Tails, 1 = Sonic alone, 2 = Tails alone, 3 = Knuckles alone
+Player_option			ds.w 1			; option selected on level select, data select screen or Sonic & Knuckles title screen
+			ds.w 1				; unused
 
-Kos_decomp_queue_count =	ramaddr( $FFFFFF0E ) ; word ; the number of pieces of data on the queue. Sign bit set indicates a decompression is in progress
-Kos_decomp_stored_registers =	ramaddr( $FFFFFF10 ) ; $28 bytes ; allows decompression to be spread over multiple frames
-Kos_decomp_stored_SR =		ramaddr( $FFFFFF38 ) ; word
-Kos_decomp_bookmark =		ramaddr( $FFFFFF3A ) ; long ; the address within the Kosinski queue processor at which processing is to be resumed
-Kos_description_field =		ramaddr( $FFFFFF3E ) ; word ; used by the Kosinski queue processor the same way the stack is used by the normal Kosinski decompression routine
-Kos_decomp_queue =		ramaddr( $FFFFFF40 ) ; $20 bytes ; 2 longwords per entry, first is source location and second is decompression location
-Kos_decomp_source =		ramaddr( $FFFFFF40 ) ; long ; the compressed data location for the first entry in the queue
-Kos_decomp_destination =	ramaddr( $FFFFFF44 ) ; long ; the decompression location for the first entry in the queue
-Kos_modules_left =		ramaddr( $FFFFFF60 ) ; byte ; the number of modules left to decompresses. Sign bit set indicates a module is being decompressed/has been decompressed
-Kos_last_module_size =		ramaddr( $FFFFFF62 ) ; word ; the uncompressed size of the last module in words. All other modules are $800 words
-Kos_module_queue =		ramaddr( $FFFFFF64 ) ; $18 bytes ; 6 bytes per entry, first longword is source location and next word is VRAM destination
-Kos_module_source =		ramaddr( $FFFFFF64 ) ; long ; the compressed data location for the first module in the queue
-Kos_module_destination =	ramaddr( $FFFFFF68 ) ; word ; the VRAM destination for the first module in the queue
+Kos_decomp_queue_count		ds.w 1			; the number of pieces of data on the queue. Sign bit set indicates a decompression is in progress
+Kos_decomp_stored_registers	ds.w 20			; allows decompression to be spread over multiple frames
+Kos_decomp_stored_SR		ds.w 1
+Kos_decomp_bookmark		ds.l 1			; the address within the Kosinski queue processor at which processing is to be resumed
+Kos_description_field		ds.w 1			; used by the Kosinski queue processor the same way the stack is used by the normal Kosinski decompression routine
+Kos_decomp_queue		ds.l 2*4		; 2 longwords per entry, first is source location and second is decompression location
+Kos_decomp_source =		Kos_decomp_queue	; long ; the compressed data location for the first entry in the queue
+Kos_decomp_destination =	Kos_decomp_queue+4	; long ; the decompression location for the first entry in the queue
+Kos_modules_left		ds.b 1			; the number of modules left to decompresses. Sign bit set indicates a module is being decompressed/has been decompressed
+			ds.b 1				; unused
+Kos_last_module_size		ds.w 1			; the uncompressed size of the last module in words. All other modules are $800 words
+Kos_module_queue		ds.w 3*4		; 6 bytes per entry, first longword is source location and next word is VRAM destination
+Kos_module_source =		Kos_module_queue	; long ; the compressed data location for the first module in the queue
+Kos_module_destination =	Kos_module_queue+4	; word ; the VRAM destination for the first module in the queue
 
-Sound_test_sound =		ramaddr( $FFFFFF84 ) ; word
-Title_screen_option =		ramaddr( $FFFFFF86 ) ; byte
-Competition_mode_type =		ramaddr( $FFFFFF8B ) ; byte ; 0 = grand prix, 3 = match race, -1 = time attack
-Total_bonus_countup =		ramaddr( $FFFFFF8E ) ; word ; the total points to be added due to various bonuses this frame in the end of level results screen
-Level_music =			ramaddr( $FFFFFF90 ) ; word
-Collected_special_ring_array =	ramaddr( $FFFFFF92 ) ; long ; each bit indicates a special stage entry ring in the current zone
-Saved2_status_secondary =	ramaddr( $FFFFFF96 ) ; byte
-Saved_apparent_zone_and_act =	ramaddr( $FFFFFF9A ) ; word
-Saved2_apparent_zone_and_act =	ramaddr( $FFFFFF9C ) ; word
+_unkFF7C			ds.w 1
+_unkFF7E			ds.w 1
+Level_select_repeat		ds.w 1			; delay counter for repeating the button press. Allows the menu move even when up/down is held down
+Level_select_option		ds.w 1			; the current selected option in the level select
+Sound_test_sound		ds.w 1
+Title_screen_option		ds.b 1
+			ds.b 1				; unused
+_tempFF88		ds.w 1				; this is used in Sonic 3 Alone, but unused in Sonic & Knuckles and Sonic 3 Complete
+Competition_mode_monitors	ds.b 1			; 0 = Enabled, FF = Disabled.
+Competition_mode_type		ds.b 1			; 0 = grand prix, 3 = match race, -1 = time attack
+_tempFF8C		ds.b 1				; this is used in Sonic 3 Alone, but unused in Sonic & Knuckles and Sonic 3 Complete
+			ds.b 1				; unused
+Total_bonus_countup		ds.w 1			; the total points to be added due to various bonuses this frame in the end of level results screen
+Level_music			ds.w 1
+Collected_special_ring_array	ds.l 1			; each bit indicates a special stage entry ring in the current zone
+Saved2_status_secondary		ds.b 1
+Respawn_table_keep		ds.b 1			; if set, respawn table is not reset during level load
+_tempFF98		ds.w 1				; this is used in Sonic 3 Alone, but unused in Sonic & Knuckles and Sonic 3 Complete
+Saved_apparent_zone_and_act	ds.w 1
+Saved2_apparent_zone_and_act	ds.w 1
+			ds.b 1				; unused
 
-Blue_spheres_header_flag =	ramaddr( $FFFFFF9F ) ; byte ; 0 = SEGA GENESIS, 1 = SEGA MEGA DRIVE
-Blue_spheres_mode =		ramaddr( $FFFFFFA0 ) ; byte ; 0 = single stage, 1 = full game
-Blue_spheres_menu_flag = 	ramaddr( $FFFFFFA1 ) ; byte ; 0 = NO WAY!, 1 = normal, bit 7 set = entering a code
-Blue_spheres_current_stage =	ramaddr( $FFFFFFA2 ) ; 4 bytes ; the layout parts that make up the current stage
-Blue_spheres_current_level =	ramaddr( $FFFFFFA6 ) ; long ; number shown at the top of the full game menu
-Blue_spheres_option =		ramaddr( $FFFFFFAA ) ; byte ; 0 = level, 1 = start, 2 = code
-Blue_spheres_progress_flag =	ramaddr( $FFFFFFAB ) ; byte ; 0 = normal, -1 = disabled (single stage mode or using a code from single stage mode)
-Blue_spheres_difficulty =	ramaddr( $FFFFFFAC ) ; byte ; value currently displayed
-Blue_spheres_target_difficulty = ramaddr( $FFFFFFAD ) ; byte ; value read from the layout
-SK_alone_flag =			ramaddr( $FFFFFFAE ) ; word ; -1 if Sonic 3 isn't locked on
-Emerald_count =			ramaddr( $FFFFFFB0 ) ; word ; both chaos and super emeralds
-Chaos_emerald_count =		ramaddr( $FFFFFFB0 ) ; byte
-Super_emerald_count =		ramaddr( $FFFFFFB1 ) ; byte
-Collected_emeralds_array =	ramaddr( $FFFFFFB2 ) ; 7 bytes ; 1 byte per emerald, 0 = not collected, 1 = chaos emerald collected, 2 = grey super emerald, 3 = super emerald collected
+Blue_spheres_header_flag	ds.b 1			; 0 = SEGA GENESIS, 1 = SEGA MEGA DRIVE
+Blue_spheres_mode		ds.b 1			; 0 = single stage, 1 = full game
+Blue_spheres_menu_flag		ds.b 1			; 0 = NO WAY!, 1 = normal, bit 7 set = entering a code
+Blue_spheres_current_stage	ds.b 4			; the layout parts that make up the current stage
+Blue_spheres_current_level	ds.l 1			; number shown at the top of the full game menu
+Blue_spheres_option		ds.b 1			; 0 = level, 1 = start, 2 = code
+Blue_spheres_progress_flag	ds.b 1			; 0 = normal, -1 = disabled (single stage mode or using a code from single stage mode)
+Blue_spheres_difficulty		ds.b 1			; value currently displayed
+Blue_spheres_target_difficulty	ds.b 1			; byte ; value read from the layout
+SK_alone_flag			ds.w 1			; -1 if Sonic 3 isn't locked on
+Emerald_count =			*			; both chaos and super emeralds
+Chaos_emerald_count		ds.b 1
+Super_emerald_count		ds.b 1
+Collected_emeralds_array	ds.b 7			; 1 byte per emerald, 0 = not collected, 1 = chaos emerald collected, 2 = grey super emerald, 3 = super emerald collected
+			ds.b 1				; unused
 
-Emeralds_converted_flag =	ramaddr( $FFFFFFBA ) ; byte ; set if at least one emerald has been converted to a super emerald
-SK_special_stage_flag =		ramaddr( $FFFFFFBB ) ; byte ; set if a Sonic & Knuckles special stage is being run
-Next_extra_life_score =		ramaddr( $FFFFFFC0 ) ; long
-Next_extra_life_score_P2 =	ramaddr( $FFFFFFC4 ) ; long ; left over from Sonic 2
+Emeralds_converted_flag		ds.b 1			; set if at least one emerald has been converted to a super emerald
+SK_special_stage_flag		ds.b 1			; set if a Sonic & Knuckles special stage is being run
+Title_anim_buffer		ds.b 1			; status of the title animation buffer. Changes 2 different nametables in VDP while the other is being processed
+Title_anim_delay		ds.b 1			; title animation delay counter
+Title_anim_frame		ds.b 1			; title animation frame number
+			ds.b 1				; unused
+Next_extra_life_score		ds.l 1
+Next_extra_life_score_P2	ds.l 1			; left over from Sonic 2
+			ds.w 1				; unused
+Debug_P1_mappings		ds.l 1			; player 1 mappings while in debug mode
+Debug_P2_mappings		ds.w 1			; long! ; player 2 mappings while in debug mode
+Demo_mode_flag :=		*
+				ds.w 1			; Sonic 3 has a different address... So uh... Yes
+Next_demo_number :=		*
+				ds.w 1			; Sonic 3 has a different address... So uh... Yes
+Blue_spheres_stage_flag :=	*			; set if a Blue Sphere special stage is being run
+				ds.b 1			; Sonic 3 has a different address... So uh... Yes
+			ds.b 1				; unused
+V_blank_cycles :=		*			; the number of cycles between V-blanks
+				ds.w 1			; Sonic 3 has a different address... So uh... Yes
+Graphics_flags :=		*			; bit 7 set := English system, bit 6 set := PAL system
+				ds.b 1			; Sonic 3 has a different address... So uh... Yes
+			ds.b 1				; unused
+Debug_mode_flag :=		*
+				ds.w 1			; Sonic 3 has a different address... So uh... Yes
+			ds.l 1				; unused
+Level_select_flag :=		*
+				ds.b 1			; Sonic 3 has a different address... So uh... Yes
+Slow_motion_flag :=		*
+				ds.b 1			; Sonic 3 has a different address... So uh... Yes
+Debug_cheat_flag :=		*			; set if the debug cheat's been entered
+				ds.w 1			; Sonic 3 has a different address... So uh... Yes
+Level_select_cheat_counter :=	*			; progress entering level select cheat, unused
+				ds.w 1			; Sonic 3 has a different address... So uh... Yes
+Debug_mode_cheat_counter :=	*			; progress entering debug mode cheat, unused
+				ds.w 1			; Sonic 3 has a different address... So uh... Yes
+Competition_mode :=		*
+				ds.w 1			; Sonic 3 has a different address... So uh... Yes
+P1_character :=			*			; 0 := Sonic, 1 := Tails, 2 := Knuckles
+				ds.b 1			; Sonic 3 has a different address... So uh... Yes
+P2_character :=			*
+				ds.b 1			; Sonic 3 has a different address... So uh... Yes
+			ds.l 1				; unused
 
-Demo_mode_flag :=		ramaddr( $FFFFFFD0 ) ; word
-Next_demo_number :=		ramaddr( $FFFFFFD2 ) ; word
-Blue_spheres_stage_flag :=	ramaddr( $FFFFFFD4 ) ; byte ; set if a Blue Sphere special stage is being run
-V_blank_cycles :=		ramaddr( $FFFFFFD6 ) ; word ; the number of cycles between V-blanks
-Graphics_flags :=		ramaddr( $FFFFFFD8 ) ; byte ; bit 7 set := English system, bit 6 set := PAL system
-Debug_mode_flag :=		ramaddr( $FFFFFFDA ) ; word
-Level_select_flag :=		ramaddr( $FFFFFFE0 ) ; byte
-Slow_motion_flag :=		ramaddr( $FFFFFFE1 ) ; byte
-Debug_cheat_flag :=		ramaddr( $FFFFFFE2 ) ; word ; set if the debug cheat's been entered
-Level_select_cheat_counter :=	ramaddr( $FFFFFFE4 ) ; word ; progress entering level select cheat, unused
-Debug_mode_cheat_counter :=	ramaddr( $FFFFFFE6 ) ; word ; progress entering debug mode cheat, unused
-Competition_mode :=		ramaddr( $FFFFFFE8 ) ; word
-P1_character :=			ramaddr( $FFFFFFEA ) ; byte ; 0 := Sonic, 1 := Tails, 2 := Knuckles
-P2_character :=			ramaddr( $FFFFFFEB ) ; byte
+V_int_jump :=			*			; contains an instruction to jump to the V-int handler
+				ds.b 6			; Sonic 3 has a different address... So uh... Yes
+V_int_addr :=			V_int_jump+2		; long
+H_int_jump :=			*			; contains an instruction to jump to the H-int handler
+				ds.b 6			; Sonic 3 has a different address... So uh... Yes
+H_int_addr :=			H_int_jump+2		; long
+Checksum_string :=		*			; set to 'SM&K' once the checksum routine has run
+				ds.l 1			; Sonic 3 has a different address... So uh... Yes
 
-V_int_jump :=			ramaddr( $FFFFFFF0 ) ; 6 bytes ; contains an instruction to jump to the V-int handler
-V_int_addr :=			ramaddr( $FFFFFFF2 ) ; long
-H_int_jump :=			ramaddr( $FFFFFFF6 ) ; 6 bytes ; contains an instruction to jump to the H-int handler
-H_int_addr :=			ramaddr( $FFFFFFF8 ) ; long
-Checksum_string :=		ramaddr( $FFFFFFFC ) ; long ; set to 'SM&K' once the checksum routine has run
+.check =	(*)&$FFFFFF
+	if (.check>0)&(.check<$FF0000)
+		fatal "Sonic & Knuckles RAM definitions are too large by $\{*} bytes!"
+	endif
+	dephase
 
+; extra Special Stage variables
+	phase Pos_table_P2
+SStage_scalar_index_0		ds.w 1			; unknown scalar table index value
+SStage_scalar_index_1		ds.w 1			; unknown scalar table index value
+SStage_scalar_index_2		ds.w 1			; unknown scalar table index value
+SStage_scalar_result_0		ds.l 1			; unknown scalar table results values
+SStage_scalar_result_1		ds.l 1			; unknown scalar table results values
+SStage_scalar_result_2		ds.l 1			; unknown scalar table results values
+	ds.b $A
+SStage_scalar_result_3		ds.l 1			; unknown scalar table results values
+Special_stage_anim_frame	ds.w 1			; special stage globe's current animation frame, $10 and higher is turning
+Special_stage_X_pos		ds.w 1
+Special_stage_Y_pos		ds.w 1
+Special_stage_angle		ds.b 1			; $00 = north, $40 = west, $80 = south, $C0 = east
+			ds.b 1				; unused
+Special_stage_velocity		ds.w 1			; player's movement speed, negative when going backwards
+Special_stage_turning		ds.b 1			; direction of next turn, 4 = left, -4 = right
+Special_stage_bumper_lock	ds.b 1			; if set, the player can't start advancing by pressing up
+Special_stage_prev_anim_frame	ds.b 1
+			ds.b 2				; unused
+Special_stage_palette_frame	ds.b 1			; same as Special_stage_anim_frame, but set to 0 while turning
+Special_stage_turn_lock		ds.b 1			; if set, the player can't turn
+Special_stage_advancing		ds.b 1			; set when the player player presses up
+Special_stage_jumping		ds.b 1			; $80 = normal jump, $81 = spring
+Special_stage_fade_timer	ds.b 1			; counts up when leaving the special stage
+Special_stage_prev_X_pos	ds.w 1
+Special_stage_prev_Y_pos	ds.w 1
+Special_stage_spheres_left	ds.w 1
+Special_stage_ring_count	ds.w 1
+Special_stage_sphere_HUD_flag	ds.b 1
+Special_stage_extra_life_flags	ds.b 1			; byte ; when bit 7 is set, the ring HUD is updated
+Special_stage_rate_timer	ds.w 1			; when this reaches 0, the special stage speeds up
+Special_stage_jumping_P2	ds.b 1			; $80 = normal jump, $81 = spring
+			ds.b 1				; unused
+Special_stage_rings_left	ds.w 1
+Special_stage_rate		ds.w 1			; player's maximum speed in either direction
+Special_stage_palette_addr	ds.l 1			; ROM address of the stage's color palette
+Special_stage_clear_timer	ds.w 1			; counts up after getting the last sphere, when it reaches $100 the emerald appears
+Special_stage_clear_routine	ds.b 1			; if set, the player can't jump
+Special_stage_emerald_timer	ds.b 1			; counts down when the emerald appears, when it reaches 0 the emerald sound plays
+Special_stage_interact		ds.w 1			; address of the last bumper touched, or the emerald at the end of the stage
+Special_stage_started		ds.b 1			; set when the player begins moving at the start of the stage
+			ds.b $2F			; unused
+SStage_extra_sprites :=		*			; some extra sprite info for special stages
+				ds.b $70		; Sonic 3 has a different address... So uh... Yes
+	dephase
 ; ---------------------------------------------------------------------------
 ; Art tile stuff
 palette_line_0      =      (0<<13)
@@ -713,3 +1043,259 @@ ArtTile_Shield                        = $079C
 ArtTile_Shield_Sparks                 = $07BB
 ArtTile_DashDust                      = $07E0
 ArtTile_DashDust_P2                   = $07F0
+
+; ---------------------------------------------------------------------------
+; Sound commands list.
+
+	phase $E1
+mus__FirstCmd =			*		; ID of the first sound command
+mus_FadeOut			ds.b 1		; $E1 - fade out music
+mus_Stop			ds.b 1		; $E2 - stop music and sound effects
+mus_MutePSG			ds.b 1		; $E3 - mute all PSG channels
+mus_StopSFX			ds.b 1		; $E4 - stop all sound effects
+mus_FadeOut2			ds.b 1		; $E5 - fade out music (duplicate)
+Mus__EndCmd =			*		; next ID after last sound command
+
+mus_FA =			$FA		; $FA - ???
+mus_StopSEGA =			$FE		; $FE - Stop SEGA sound
+mus_SEGA =			$FF		; $FF - Play SEGA sound
+	dephase
+; ---------------------------------------------------------------------------
+; Music ID's list. These do not affect the sound driver, be careful.
+
+	phase $01
+Mus__First =			*		; ID of the first music
+mus_AIZ1			ds.b 1		; $01
+mus_AIZ2			ds.b 1		; $02
+mus_HCZ1			ds.b 1		; $03
+mus_HCZ2			ds.b 1		; $04
+mus_MGZ1			ds.b 1		; $05
+mus_MGZ2			ds.b 1		; $06
+mus_CNZ1			ds.b 1		; $07
+mus_CNZ2			ds.b 1		; $08
+mus_FBZ1			ds.b 1		; $09
+mus_FBZ2			ds.b 1		; $0A
+mus_ICZ1			ds.b 1		; $0B
+mus_ICZ2			ds.b 1		; $0C
+mus_LBZ1			ds.b 1		; $0D
+mus_LBZ2			ds.b 1		; $0E
+mus_MHZ1			ds.b 1		; $0F
+mus_MHZ2			ds.b 1		; $10
+mus_SOZ1			ds.b 1		; $11
+mus_SOZ2			ds.b 1		; $12
+mus_LRZ1			ds.b 1		; $13
+mus_HPZ				ds.b 1		; $14
+mus_SSZ				ds.b 1		; $15
+mus_DEZ1			ds.b 1		; $16
+mus_DEZ2			ds.b 1		; $17
+mus_MinibossK			ds.b 1		; $18
+mus_EndBoss			ds.b 1		; $19
+mus_DDZ				ds.b 1		; $1A
+mus_MagneticOrbs		ds.b 1		; $1B
+mus_SpecialStage		ds.b 1		; $1C
+mus_SlotMachine			ds.b 1		; $1D
+mus_Gumball			ds.b 1		; $1E
+mus_Knuckles			ds.b 1		; $1F
+mus_ALZ				ds.b 1		; $20
+mus_BPZ				ds.b 1		; $21
+mus_DPZ				ds.b 1		; $22
+mus_CGZ				ds.b 1		; $23
+mus_EMZ				ds.b 1		; $24
+mus_TitleScreen			ds.b 1		; $25
+mus_Credits3			ds.b 1		; $26
+mus_GameOver			ds.b 1		; $27
+mus_Continue			ds.b 1		; $28
+mus_GotThroughAct		ds.b 1		; $29
+mus_ExtraLife			ds.b 1		; $2A
+mus_Emerald			ds.b 1		; $2B
+mus_Invincibility		ds.b 1		; $2C
+mus_CompetitionMenu		ds.b 1		; $2D
+mus_Miniboss			ds.b 1		; $2E
+mus_DataSelect			ds.b 1		; $2F
+mus_FinalBoss			ds.b 1		; $30
+mus_Drowning			ds.b 1		; $31
+mus_Ending			ds.b 1		; $32
+Mus__End =			*		; next ID after last music
+	dephase
+
+; ---------------------------------------------------------------------------
+; Sound effect ID's list. These do not affect the sound driver, be careful.
+
+	phase $33
+sfx_First =			*		; ID of the first sound effect
+sfx_RingRight			ds.b 1		; $33
+sfx_RingLeft			ds.b 1		; $34
+sfx_Death			ds.b 1		; $35
+sfx_Skid			ds.b 1		; $36
+sfx_SpikeHit			ds.b 1		; $37
+sfx_Bubble			ds.b 1		; $38
+sfx_Splash			ds.b 1		; $39
+sfx_Shield			ds.b 1		; $3A
+sfx_Drown			ds.b 1		; $3B
+sfx_Roll			ds.b 1		; $3C
+sfx_Break			ds.b 1		; $3D
+sfx_FireShield			ds.b 1		; $3E
+sfx_BubbleShield		ds.b 1		; $3F
+sfx_UnknownShield		ds.b 1		; $40
+sfx_ElectricShield		ds.b 1		; $41
+sfx_InstaAttack			ds.b 1		; $42
+sfx_FireAttack			ds.b 1		; $43
+sfx_BubbleAttack		ds.b 1		; $44
+sfx_ElectricAttack		ds.b 1		; $45
+sfx_SuperAlt			ds.b 1		; $46
+sfx_SandwallRise		ds.b 1		; $47
+sfx_Blast			ds.b 1		; $48
+sfx_Thump			ds.b 1		; $49
+sfx_Grab			ds.b 1		; $4A
+sfx_WaterfallSplash		ds.b 1		; $4B
+sfx_GlideLand			ds.b 1		; $4C
+sfx_Projectile			ds.b 1		; $4D
+sfx_MissileExplode		ds.b 1		; $4E
+sfx_FlamethrowerQuiet		ds.b 1		; $4F
+sfx_BossActivate		ds.b 1		; $50
+sfx_MissileThrow		ds.b 1		; $51
+sfx_SpikeMove			ds.b 1		; $52
+sfx_Charging			ds.b 1		; $53
+sfx_BossLazer			ds.b 1		; $54
+sfx_BlockConveyor		ds.b 1		; $55
+sfx_FlipBridge			ds.b 1		; $56
+sfx_Geyser			ds.b 1		; $57
+sfx_FanLatch			ds.b 1		; $58
+sfx_Collapse			ds.b 1		; $59
+sfx_UnknownCharge		ds.b 1		; $5A
+sfx_Switch			ds.b 1		; $5B
+sfx_MetalSpark			ds.b 1		; $5C
+sfx_FloorThump			ds.b 1		; $5D
+sfx_Lazer			ds.b 1		; $5E
+sfx_Crash			ds.b 1		; $5F
+sfx_BossZoom			ds.b 1		; $60
+sfx_BossHitFloor		ds.b 1		; $61
+sfx_Jump			ds.b 1		; $62
+sfx_Starpost			ds.b 1		; $63
+sfx_PulleyGrab			ds.b 1		; $64
+sfx_BlueSphere			ds.b 1		; $65
+sfx_AllSpheres			ds.b 1		; $66
+sfx_LevelProjectile		ds.b 1		; $67
+sfx_Perfect			ds.b 1		; $68
+sfx_PushBlock			ds.b 1		; $69
+sfx_Goal			ds.b 1		; $6A
+sfx_ActionBlock			ds.b 1		; $6B
+sfx_Splash2			ds.b 1		; $6C
+sfx_UnknownShift		ds.b 1		; $6D
+sfx_BossHit			ds.b 1		; $6E
+sfx_Rumble2			ds.b 1		; $6F
+sfx_LavaBall			ds.b 1		; $70
+sfx_Shield2			ds.b 1		; $71
+sfx_Hoverpad			ds.b 1		; $72
+sfx_Transporter			ds.b 1		; $73
+sfx_TunnelBooster		ds.b 1		; $74
+sfx_BalloonPlatform		ds.b 1		; $75
+sfx_TrapDoor			ds.b 1		; $76
+sfx_Balloon			ds.b 1		; $77
+sfx_GravityMachine		ds.b 1		; $78
+sfx_Lightning			ds.b 1		; $79
+sfx_BossMagma			ds.b 1		; $7A
+sfx_SmallBumpers		ds.b 1		; $7B
+sfx_ChainTension		ds.b 1		; $7C
+sfx_UnknownPump			ds.b 1		; $7D
+sfx_GroundSlide			ds.b 1		; $7E
+sfx_FrostPuff			ds.b 1		; $7F
+sfx_IceSpikes			ds.b 1		; $80
+sfx_TubeLauncher		ds.b 1		; $81
+sfx_SandSplash			ds.b 1		; $82
+sfx_BridgeCollapse		ds.b 1		; $83
+sfx_UnknownPowerUp		ds.b 1		; $84
+sfx_UnknownPowerDown		ds.b 1		; $85
+sfx_Alarm			ds.b 1		; $86
+sfx_MushroomBounce		ds.b 1		; $87
+sfx_PulleyMove			ds.b 1		; $88
+sfx_WeatherMachine		ds.b 1		; $89
+sfx_Bouncy			ds.b 1		; $8A
+sfx_ChopTree			ds.b 1		; $8B
+sfx_ChopStuck			ds.b 1		; $8C
+sfx_UnknownFlutter		ds.b 1		; $8D
+sfx_UnknownRevving		ds.b 1		; $8E
+sfx_DoorOpen			ds.b 1		; $8F
+sfx_DoorMove			ds.b 1		; $90
+sfx_DoorClose			ds.b 1		; $91
+sfx_GhostAppear			ds.b 1		; $92
+sfx_BossRecovery		ds.b 1		; $93
+sfx_ChainTick			ds.b 1		; $94
+sfx_BossHand			ds.b 1		; $95
+sfx_MetalLand			ds.b 1		; $96
+sfx_EnemyBreath			ds.b 1		; $97
+sfx_BossProjectile		ds.b 1		; $98
+sfx_UnknownPlink		ds.b 1		; $99
+sfx_SpringLatch			ds.b 1		; $9A
+sfx_ThumpBoss			ds.b 1		; $9B
+sfx_SuperEmerald		ds.b 1		; $9C
+sfx_Targeting			ds.b 1		; $9D
+sfx_Clank			ds.b 1		; $9E
+sfx_SuperTransform		ds.b 1		; $9F
+sfx_MissileShoot		ds.b 1		; $A0
+sfx_UnknownOminous		ds.b 1		; $A1
+sfx_FloorLauncher		ds.b 1		; $A2
+sfx_GravityLift			ds.b 1		; $A3
+sfx_MetalTransform		ds.b 1		; $A4
+sfx_UnknownRise			ds.b 1		; $A5
+sfx_LaunchGrab			ds.b 1		; $A6
+sfx_LaunchReady			ds.b 1		; $A7
+sfx_EnergyZap			ds.b 1		; $A8
+sfx_AirDing			ds.b 1		; $A9
+sfx_Bumper			ds.b 1		; $AA
+sfx_Spindash			ds.b 1		; $AB
+sfx_Continue			ds.b 1		; $AC
+sfx_LaunchGo			ds.b 1		; $AD
+sfx_Flipper			ds.b 1		; $AE
+sfx_EnterSS			ds.b 1		; $AF
+sfx_Register			ds.b 1		; $B0
+sfx_Spring			ds.b 1		; $B1
+sfx_Error			ds.b 1		; $B2
+sfx_BigRing			ds.b 1		; $B3
+sfx_Explode			ds.b 1		; $B4
+sfx_Diamonds			ds.b 1		; $B5
+sfx_Dash			ds.b 1		; $B6
+sfx_SlotMachine			ds.b 1		; $B7
+sfx_Signpost			ds.b 1		; $B8
+sfx_RingLoss			ds.b 1		; $B9
+sfx_Flying			ds.b 1		; $BA
+sfx_FlyTired			ds.b 1		; $BB
+sfx__FirstContinuous =		*		; ID of the first continuous sound effect
+sfx_SlideSkidLoud		ds.b 1		; $BC
+sfx_LargeShip			ds.b 1		; $BD
+sfx_EggmanSiren			ds.b 1		; $BE
+sfx_BossRotate			ds.b 1		; $BF
+sfx_FanBig			ds.b 1		; $C0
+sfx_FanSmall			ds.b 1		; $C1
+sfx_FlamethrowerLoud		ds.b 1		; $C2
+sfx_GravityTunnel		ds.b 1		; $C3
+sfx_BossPanic			ds.b 1		; $C4
+sfx_UnknownSpin			ds.b 1		; $C5
+sfx_WaveHover			ds.b 1		; $C6
+sfx_CannonTurn			ds.b 1		; $C7
+sfx_SlideSkidQuiet		ds.b 1		; $C8
+sfx_SpikeBalls			ds.b 1		; $C9
+sfx_LightTunnel			ds.b 1		; $CA
+sfx_Rumble			ds.b 1		; $CB
+sfx_BigRumble			ds.b 1		; $CC
+sfx_DeathEggRiseLoud		ds.b 1		; $CD
+sfx_WindQuiet			ds.b 1		; $CE
+sfx_WindLoud			ds.b 1		; $CF
+sfx_Rising			ds.b 1		; $D0
+sfx_UnknownFlutter2		ds.b 1		; $D1
+sfx_GumballTab			ds.b 1		; $D2
+sfx_DeathEggRiseQuiet		ds.b 1		; $D3
+sfx_TurbineHum			ds.b 1		; $D4
+sfx_LavaFall			ds.b 1		; $D5
+sfx_UnknownZap			ds.b 1		; $D6
+sfx_ConveyorPlatform		ds.b 1		; $D7
+sfx_UnknownSaw			ds.b 1		; $D8
+sfx_MagneticSpike		ds.b 1		; $D9
+sfx_LeafBlower			ds.b 1		; $DA
+sfx_WaterSkid			ds.b 1		; $DB
+mus_CreditsK			ds.b 1		; $DC - Can also be treated as SFX?
+				ds.b 3		; unused SFX slots, the driver will happily play them though
+sfx__End =			*		; next ID after the last sound effect
+
+	dephase
+	!org 0				; make sure we reset the ROM position to 0

@@ -34,6 +34,10 @@ else:
 	print("Unknown platform")
 	sys.exit(1)
 
+def chdir_to_root():
+	basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+	os.chdir(basedir)
+
 def delete(path):
 	if os.path.isfile(path):
 		os.remove(path);
@@ -62,6 +66,7 @@ def build(targetName, def0, def1, accurate):
 
 	assembleCommand = [asBinary, "-x", "-xx", "-n", "-c", "-A", "-L"];
 
+	basedir = os.path.relpath(os.getcwd())
 	if def0 is None:
 		assembleCommand.append("-o");
 		assembleCommand.append("sonic3k.p");
@@ -69,12 +74,16 @@ def build(targetName, def0, def1, accurate):
 		assembleCommand.append("sonic3k.lst");
 		assembleCommand.append("-shareout");
 		assembleCommand.append("sonic3k.h");
+		assembleCommand.append("-i");
+		assembleCommand.append(basedir);
 
 		# Input asm file
 		assembleCommand.append("s3.asm");
 	else:
 		assembleCommand.append(def0);
 		assembleCommand.append(def1);
+		assembleCommand.append("-i");
+		assembleCommand.append(basedir);
 
 		# Input asm file
 		assembleCommand.append("sonic3k.asm");
@@ -175,7 +184,7 @@ def check_hash(filePath, sha256_hash, filesize):
 def run(build3k, buildS3, buildSK, verify):
 
 	# Navigate to base dir
-	os.chdir("..");
+	chdir_to_root()
 
 	if platform.system() == "Windows":
 		os.environ["AS_MSGPATH"] = "AS/Win32";
@@ -224,7 +233,7 @@ def usage():
 if __name__ == "__main__":
 	sys.dont_write_bytecode = True
 	print("Sonic & Knuckles disassembly build script")
-	os.chdir("..")
+	chdir_to_root()
 
 	# Options.
 	build3K = False

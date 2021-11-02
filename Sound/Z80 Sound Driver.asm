@@ -88,7 +88,7 @@ DAC_Null_Chain macro rate,dacptr,linkptr
 ; Music Bank 1
 ; ---------------------------------------------------------------------------
 Snd_Bank1_Start:
-Snd_SKCredits:		binclude 	"Sound/Music/Credits.bin"
+Snd_SKCredits:		binclude	"Sound/Music/Credits.bin"
 Snd_GameOver:		binclude	"Sound/Music/Game Over.bin"
 Snd_Continue:		binclude	"Sound/Music/Continue.bin"
 Snd_Results:		binclude	"Sound/Music/Level Outro.bin"
@@ -400,7 +400,7 @@ zROMWindow				=	$8000
 	if fix_sndbugs
 zDataStart				=	$1BF0
 	else
-zDataStart				=	$1C00	
+zDataStart				=	$1C00
 	endif
 		phase zDataStart
 	if fix_sndbugs
@@ -485,6 +485,7 @@ zSFX_PSG1:		zTrack
 zSFX_PSG2:		zTrack
 zSFX_PSG3:		zTrack
 zTracksSFXEnd:
+		dephase
 
 		phase zTracksSFXStart
 zTracksSaveStart:
@@ -515,21 +516,6 @@ Z80_SoundDriver:
 		CPU Z80
 		listing purecode
 ; ---------------------------------------------------------------------------
-MusID__First			= 01h
-MusID_1UP				= 2Ah
-MusID_Emerald			= 2Bh
-MusID__End				= 33h
-SndID__First			= MusID__End
-SndID_Ring				= SndID__First
-SndID_Spindash			= 0ABh
-SndID__FirstContinuous	= 0BCh
-MusID_SKCredits			= 0DCh
-SndID__End				= 0E0h
-FadeID__First			= 0E1h
-FadeID__End				= 0E6h
-SndID_StopSega			= 0FEh
-SndID_Sega				= 0FFh
-; ---------------------------------------------------------------------------
 NoteRest				= 080h
 FirstCoordFlag			= 0E0h
 ; ---------------------------------------------------------------------------
@@ -559,8 +545,12 @@ bankswitch1 macro
 			rrca
 			ld	(hl), a
 		endm
+	if fix_sndbugs
+		ld	(hl),h ; The low bit of h is 0
+	else
 		xor	a
 		ld	(hl), a
+	endif
     endm
 
 bankswitch2 macro
@@ -570,8 +560,12 @@ bankswitch2 macro
 			rra
 			ld	(hl), a
 		endm
+	if fix_sndbugs
+		ld	(hl),h ; The low bit of h is 0
+	else
 		xor	a
 		ld	(hl), a
+	endif
     endm
 
 bankswitch3 macro
@@ -593,8 +587,12 @@ bankswitchToMusic macro
 			rra
 			ld	(hl), a
 		endm
+	if fix_sndbugs
+		ld	(hl),h ; The low bit of h is 0
+	else
 		xor	a
 		ld	(hl), a
+	endif
     endm
 
 ; macro to make a certain error message clearer should you happen to get it...
@@ -890,12 +888,12 @@ zUpdateMusic:
 		call	zDoMusicFadeOut				; Check if music should be faded out and fade if needed
 		call	zDoMusicFadeIn				; Check if music should be faded in and fade if needed
 		ld	a, (zFadeToPrevFlag)			; Get fade-to-prev flag
-		cp	MusID_1UP-MusID__First						; Is it still 1-Up?
+		cp	mus_ExtraLife-Mus__First			; Is it still 1-Up?
 		jr	nz, .check_fade_in				; Branch if not
 		ld	a, (zMusicNumber)				; Get next music to play
-		cp	MusID_1UP						; Is it another 1-Up?
+		cp	mus_ExtraLife						; Is it another 1-Up?
 		jr	z, .clr_queue					; Branch if yes
-		cp	MusID__End-MusID__First					; Is it music (except credits song)?
+		cp	Mus__End-Mus__First					; Is it music (except credits song)?
 		jr	c, .clr_sfx						; Branch if not
 
 .clr_queue:
@@ -1281,8 +1279,8 @@ zFinishTrackUpdate:
 		bit	1, (ix+zTrack.PlaybackControl)	; Is 'do not attack next note' flag set?
 		ret	nz								; Return if yes
 		xor	a								; Clear a
-		ld	(ix+zTrack.ModulationSpeed), a	; Clear modulation speed
-		ld	(ix+zTrack.ModulationValLow), a	; Clear low byte of accumulated modulation
+		ld	(ix+zTrack.ModEnvIndex), a		; Clear modulation envelope index
+		ld	(ix+zTrack.ModEnvSens), a		; Clear modulation envelope multiplier
 		ld	(ix+zTrack.VolEnv), a			; Reset volume envelope
 		ld	a, (ix+zTrack.NoteFillMaster)	; Get master note fill
 		ld	(ix+zTrack.NoteFillTimeout), a	; Set note fill timeout
@@ -1428,7 +1426,10 @@ zDoFMVolEnv:
 		push	bc							; Save bc
 		jr	nc, .skip_reg					; Branch if c bit shifted was zero
 		add	a, (hl)							; Add TL value to volume envelope
+	if fix_sndbugs=0
+		; This isn't actually needed
 		and	7Fh								; Strip sign bit
+	endif
 		ld	c, a							; c = TL + volume envelope
 		ld	a, (de)							; a = YM2612 register
 		call	zWriteFMIorII				; Send TL data to YM2612
@@ -1855,19 +1856,19 @@ zCycleSoundQueue:
 ; TypeCheck:
 ;sub_4FB
 zPlaySoundByIndex:
-		cp	MusID_SKCredits					; Is this the credits music?
+		cp	mus_CreditsK					; Is this the credits music?
 		jp	z, zPlayMusicCredits			; Branch if yes
-		cp	SndID_Sega						; Is this the SEGA sound?
+		cp	mus_SEGA						; Is this the SEGA sound?
 		jp	z, zPlaySegaSound				; Branch if yes
-		cp	MusID__End						; Is this a music?
+		cp	Mus__End						; Is this a music?
 		jp	c, zPlayMusic					; Branch if yes
-		cp	SndID__End						; Is this a sound effect?
+		cp	sfx__End						; Is this a sound effect?
 		jp	c, zPlaySound_CheckRing			; Branch if yes
-		cp	FadeID__First					; Is it before the first fade effect?
+		cp	mus__FirstCmd					; Is it before the first fade effect?
 		jp	c, zStopAllSound					; Branch if yes
-		cp	FadeID__End						; Is this after the last fade effect?
+		cp	Mus__EndCmd						; Is this after the last fade effect?
 		jp	nc, zStopAllSound					; Branch if yes
-		sub	FadeID__First					; If none of the checks passed, do fade effects.
+		sub	mus__FirstCmd					; If none of the checks passed, do fade effects.
 		ld	hl, zFadeEffects				; hl = switch table pointer
 		rst	PointerTableOffset				; Get address of function that handles the fade effect
 	if fix_sndbugs=0
@@ -1928,10 +1929,10 @@ zPlayMusicCredits:
 
 ;loc_558
 zPlayMusic:
-		sub	MusID__First								; Remap index from 1h-32h to 0h-31h (see also credits music, above)
+		sub	Mus__First								; Remap index from 1h-32h to 0h-31h (see also credits music, above)
 		ret	m								; Return if negative (id = 0)
 		push	af							; Save af
-		cp	MusID_1UP-MusID__First						; Is it the 1-up music?
+		cp	mus_ExtraLife-Mus__First						; Is it the 1-up music?
 		jp	nz, zPlayMusic_DoFade			; Branch if not
 		ld	a, (zFadeInTimeout)				; Fading timeout
 		or	a								; Is music being faded?
@@ -1949,7 +1950,7 @@ zPlayMusic:
 ; ---------------------------------------------------------------------------
 .no_fade:
 		ld	a, (zFadeToPrevFlag)			; Get fade-to-prev flag
-		cp	MusID_1UP-MusID__First						; Was it triggered by the 1-up song?
+		cp	mus_ExtraLife-Mus__First						; Was it triggered by the 1-up song?
 		jp	z, zBGMLoad						; Branch if yes
 		xor	a								; a = 0
 		ld	(zMusicNumber), a				; Clear M68K input queue...
@@ -1987,7 +1988,7 @@ zPlayMusic:
 		add	hl, de							; Advance to next track
 		djnz	.loop						; Loop for all tracks
 
-		ld	a, MusID_1UP-MusID__First					; a = 1-up id-1
+		ld	a, mus_ExtraLife-Mus__First					; a = 1-up id-1
 		ld	(zFadeToPrevFlag), a			; Set fade-to-prev flag to it
 		ld	a, (zCurrentTempo)				; Get current tempo
 		ld	(zCurrentTempoSave), a			; Save it
@@ -2125,7 +2126,7 @@ zPSGInitBytes:
 ; ---------------------------------------------------------------------------
 ;loc_6A9
 zPlaySound_CheckRing:
-		sub	SndID__First					; Make it a 0-based index
+		sub	sfx_First					; Make it a 0-based index
 		or	a								; Is it the ring sound?
 		jp	nz, zPlaySound_Bankswitch		; Branch if not
 		ld	a, (zRingSpeaker)				; Get speaker on which ring sound is played
@@ -2141,9 +2142,9 @@ zPlaySound_Bankswitch:
 		ld	c, zID_SFXPointers				; SFX table index
 		ld	(zUpdatingSFX), a				; Clear flag to update SFX
 		ex	af, af'							; Restore af
-		cp	SndID_Spindash-SndID__First		; Is this the spindash sound?
+		cp	sfx_Spindash-sfx_First		; Is this the spindash sound?
 		jp	z, zPlaySound					; Branch if yes
-		cp	SndID__FirstContinuous-SndID__First	; Is this before sound 0BCh?
+		cp	sfx__FirstContinuous-sfx_First	; Is this before sound 0BCh?
 		jp	c, zPlaySound_Normal			; Branch if yes
 		push	af							; Save af
 		ld	b, a							; b = sound index
@@ -2980,18 +2981,20 @@ zFadeInToPrevious:
 ; ---------------------------------------------------------------------------
 ;loc_AA5
 zPSGFrequencies:
-		; This table starts with 12 notes not in S1 or S2:
+		; This table differs from the one in Sonic 1 and 2's drivers by
+		; having an extra octave at the start and two extra notes at
+		; the end, allowing it to span notes c-0 to b-7.
 		dw 3FFh,3FFh,3FFh,3FFh,3FFh,3FFh,3FFh,3FFh,3FFh,3F7h,3BEh,388h
-		; The following notes are present on S1 and S2 too:
 		dw 356h,326h,2F9h,2CEh,2A5h,280h,25Ch,23Ah,21Ah,1FBh,1DFh,1C4h
 		dw 1ABh,193h,17Dh,167h,153h,140h,12Eh,11Dh,10Dh,0FEh,0EFh,0E2h
 		dw 0D6h,0C9h,0BEh,0B4h,0A9h,0A0h,097h,08Fh,087h,07Fh,078h,071h
 		dw 06Bh,065h,05Fh,05Ah,055h,050h,04Bh,047h,043h,040h,03Ch,039h
 		dw 036h,033h,030h,02Dh,02Bh,028h,026h,024h,022h,020h,01Fh,01Dh
 		dw 01Bh,01Ah,018h,017h,016h,015h,013h,012h,011h,010h,000h,000h
-		; Then, it falls through to the 12 base notes from FM octaves.
 ;loc_B4D
 zFMFrequencies:
+		; This table spans only a single octave, as the octave frequency
+		; is calculated at run-time unlike in Sonic 1 and 2's drivers.
 		dw 284h,2ABh,2D3h,2FEh,32Dh,35Ch,38Fh,3C5h,3FFh,43Ch,47Ch,4C0h
 ; ---------------------------------------------------------------------------
 ; ===========================================================================
@@ -3336,9 +3339,17 @@ zSendTL:
 		or	a								; Is it positive?
 		jp	p, .skip_track_vol				; Branch if yes
 		add	a, (ix+zTrack.Volume)			; Add track's volume to it
+	if fix_sndbugs
+		; Perform some clamping, to prevent volume attenuation overflow (quiet sounds becoming loud)
+		jr	nc,.skip_track_vol
+		ld	a, 7Fh
+	endif
 
 .skip_track_vol:
+	if fix_sndbugs=0
+		; Not actually needed
 		and	7Fh								; Strip sign bit
+	endif
 		ld	c, a							; c = new volume for operator
 		ld	a, (de)							; a = register write command
 		call	zWriteFMIorII				; Send it to YM2612
@@ -4312,8 +4323,7 @@ zDoVolEnv:
 		; In order to get here, the flutter value would have to be:
 		; (1) negative;
 		; (2) not 80h, 81h or 83h.
-		; As it stands, none of the entries in the flutter tables will allow
-		; this code to execute.
+		; VolEnv_0A contains such a value, but luckily isn't used by any songs or sounds.
 		ld	a, (bc)							; Get value from wherever the hell bc is pointing to
 		jr	zDoVolEnvSetValue				; Use this as new envelope index
 ; ---------------------------------------------------------------------------
@@ -4499,7 +4509,7 @@ DecTable:
 ; disables interrupts) until either of the following conditions hold:
 ;
 ;	(1)	The SEGA PCM is fully played
-;	(2)	The next song to play is 0FEh (SndID_StopSega)
+;	(2)	The next song to play is 0FEh (mus_StopSEGA)
 ;loc_1126
 zPlaySEGAPCM:
 		di									; Disable interrupts
@@ -4522,7 +4532,7 @@ zPlaySEGAPCM:
 		ld	a, (hl)							; a = next byte of SEGA PCM
 		ld	(zYM2612_D0), a					; Send to DAC
 		ld	a, (zMusicNumber)				; Check next song number
-		cp	SndID_StopSega					; Is it the command to stop playing SEGA PCM?
+		cp	mus_StopSEGA					; Is it the command to stop playing SEGA PCM?
 		jr	z, .done						; Break the loop if yes
 		nop
 		nop
@@ -4593,16 +4603,13 @@ z80_ModEnvPointers:
 		dw	ModEnv_07
 
 ModEnv_01:	db    0
-ModEnv_00:	db    1,   2,   1,   0,0FFh,0FEh,0FDh,0FCh,0FDh,0FEh,0FFh, 83h
+ModEnv_00:	db    1,   2,   1,   0,  -1,  -2,  -3,  -4,  -3,  -2,  -1, 83h
 ModEnv_02:	db    0,   0,   0,   0, 13h, 26h, 39h, 4Ch, 5Fh, 72h, 7Fh, 72h, 83h
-ModEnv_03:	db    1,   2,   3,   2,   1,   0,0FFh,0FEh,0FDh,0FEh,0FFh,   0, 82h,   0
-ModEnv_04:	db    0,   0,   1,   3,   1,   0,0FFh,0FDh,0FFh,   0, 82h,   2
-ModEnv_05:	db    0,   0,   0,   0,   0, 0Ah, 14h, 1Eh, 14h, 0Ah,   0,0F6h,0ECh,0E2h,0ECh,0F6h
-        	db  82h,   4
-ModEnv_06:	db    0,   0,   0,   0, 16h, 2Ch, 42h, 2Ch, 16h,   0,0EAh,0D4h,0BEh,0D4h,0EAh, 82h
-        	db    3
-ModEnv_07:	db    1,   2,   3,   4,   3,   2,   1,   0,0FFh,0FEh,0FDh,0FCh,0FDh,0FEh,0FFh,   0
-        	db  82h,   1
+ModEnv_03:	db    1,   2,   3,   2,   1,   0,  -1,  -2,  -3,  -2,  -1,   0, 82h,   0
+ModEnv_04:	db    0,   0,   1,   3,   1,   0,  -1,  -3,  -1,   0, 82h,   2
+ModEnv_05:	db    0,   0,   0,   0,   0,  10,  20,  30,  20,  10,   0, -10, -20, -30, -20, -10, 82h,   4
+ModEnv_06:	db    0,   0,   0,   0,  22,  44,  66,  44,  22,   0, -22, -44, -66, -44, -22, 82h,   3
+ModEnv_07:	db    1,   2,   3,   4,   3,   2,   1,   0,  -1,  -2,  -3,  -4,  -3,  -2,  -1,   0, 82h,   1
 
 ; ---------------------------------------------------------------------------
 ; ===========================================================================
@@ -4631,7 +4638,15 @@ VolEnv_07:	db    0,   0,   0,   2,   3,   3,   4,   5,   6,   7,   8,   9, 0Ah, 
 VolEnv_08:	db    3,   2,   1,   1,   0,   0,   1,   2,   3,   4, 81h
 VolEnv_09:	db    1,   0,   0,   0,   0,   1,   1,   1,   2,   2,   2,   3,   3,   3,   3,   4
 			db    4,   4,   5,   5, 81h
-VolEnv_0A:	db  10h, 20h, 30h, 40h, 30h, 20h, 10h,   0,0F0h, 80h
+; The -10h in this FM volume envelope appears to be erroneous:
+; negative volume attenuations aren't supported, and instead
+; trigger the code intended for byte 82h.
+; This envelope appears in many SMPS Z80 Type 2 DAC drivers,
+; suggesting it was some kind of poorly-thought-out example.
+; Oddly, this same envelope appears in Ristar (whose driver
+; *does* support negative attenuations), despite SMPS 68k not
+; supporting FM volume envelopes.
+VolEnv_0A:	db  10h, 20h, 30h, 40h, 30h, 20h, 10h,   0,-10h, 80h
 VolEnv_0B:	db    0,   0,   1,   1,   3,   3,   4,   5, 83h
 VolEnv_0C:	db    0, 81h
 VolEnv_0D:	db    2, 83h
